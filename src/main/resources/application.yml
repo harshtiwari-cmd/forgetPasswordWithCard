@@ -8,16 +8,16 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://34.18.104.74:5432/dukhanbank
     driver-class-name: org.postgresql.Driver
     username: postgres
-    password: MyNewPassword123!
+    password: Poclab_123#
     hikari:
       max-lifetime: 540000
   main:
     allow-bean-definition-overriding: true
 
 server:
-  port: 7070
+  port: 9090
