@@ -1,0 +1,23 @@
+
+mock:
+  enabled: true
+
+spring:
+  application:
+    name: forgot-service
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: MyNewPassword123!
+    hikari:
+      max-lifetime: 540000
+  main:
+    allow-bean-definition-overriding: true
+
+server:
+  port: 7070
