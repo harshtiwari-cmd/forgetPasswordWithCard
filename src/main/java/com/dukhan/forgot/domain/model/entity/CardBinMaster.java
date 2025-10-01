@@ -25,4 +25,7 @@ public class CardBinMaster {
     
     @Column(name = "card_type", length = 20)
     private String cardType;
+
+    @Column(name = "status", length = 20)
+    private String status;
 }
