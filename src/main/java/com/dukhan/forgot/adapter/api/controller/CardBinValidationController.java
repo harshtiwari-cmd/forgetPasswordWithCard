@@ -61,7 +61,7 @@ public class CardBinValidationController {
             GenericResponse<java.util.List<CardBinMaster>> response = cardBinValidationService.getActiveBins();
             if (response == null || response.getData() == null || response.getData().isEmpty()) {
                 logger.info("No active CardBin records found");
-                return GenericResponse.success(Collections.emptyList());
+                return GenericResponse.successNoData(Collections.emptyList());
             }
             logger.info("Fetched active CardBin records - count: {}", response.getData().size());
             return GenericResponse.success(response.getData());
