@@ -36,19 +36,21 @@ public class CardBinValidationController {
             @RequestHeader(name = AppConstant.SUB_MODULE_ID, required = false) String subModuleId,
             @Valid @RequestBody CardBinValidationRequest request) {
         
-        logger.info("CardBin validation request received - Unit: {}, Channel: {}, ServiceId: {}, CardNumber: {}",
+        logger.info("CardBin validation and PIN encryption request received - Unit: {}, Channel: {}, ServiceId: {}, CardNumber: {}",
                 unit, channel, serviceId, maskCardNumber(request.getCardNumber()));
         
         try {
             GenericResponse<CardBinValidationResponse> response = cardBinValidationService.validateCardBin(
                     unit, channel, lang, serviceId, screenId, moduleId, subModuleId, request);
             
-            logger.info("CardBin validation completed - Unit: {}, Channel: {}, ServiceId: {}, Success: {}",
-                    unit, channel, serviceId, AppConstant.RESULT_CODE.equals(response.getStatus().getCode()));
+            boolean isSuccess = AppConstant.RESULT_CODE.equals(response.getStatus().getCode());
+            logger.info("CardBin validation and PIN encryption completed - Unit: {}, Channel: {}, ServiceId: {}, Success: {}, HasEncryptedPin: {}",
+                    unit, channel, serviceId, isSuccess, 
+                    isSuccess && response.getData() != null && response.getData().getEncryptedPin() != null);
             
             return response;
         } catch (Exception e) {
-            logger.error("Error occurred during CardBin validation - Unit: {}, Channel: {}, ServiceId: {}, Error: {}",
+            logger.error("Error occurred during CardBin validation and PIN encryption - Unit: {}, Channel: {}, ServiceId: {}, Error: {}",
                     unit, channel, serviceId, e.getMessage(), e);
             throw e;
         }

@@ -7,9 +7,12 @@ import com.dukhan.forgot.domain.model.entity.CardBinMaster;
 import com.dukhan.forgot.domain.repository.CardBinMasterRepository;
 import com.dukhan.forgot.infrastructure.common.AppConstant;
 import com.dukhan.forgot.infrastructure.common.GenericResponse;
+import com.dukhan.forgot.infrastructure.common.exception.BARWAHSMEncryptionException;
+import com.dukhan.forgot.infrastructure.common.exception.BARWAHSMParsingException;
+import com.dukhan.forgot.infrastructure.common.exception.BarwaHSMCommuicationException;
+import com.dukhan.forgot.infrastructure.common.hsm.HSMEncryptorManagerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -20,32 +23,143 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
     
     private static final Logger logger = LoggerFactory.getLogger(CardBinValidationServiceImpl.class);
     
-    @Autowired
     private CardBinMasterRepository cardBinMasterRepository;
+    private final HSMEncryptorManagerImpl hsmEncryptor;
 
+    public CardBinValidationServiceImpl(HSMEncryptorManagerImpl hsmEncryptor,CardBinMasterRepository cardBinMasterRepository) {
+        this.hsmEncryptor = hsmEncryptor;
+        this.cardBinMasterRepository = cardBinMasterRepository;
+    }
     @Override
     public GenericResponse<CardBinValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
         logger.debug("Starting CardBin validation for unit: {}, channel: {}, serviceId: {}", unit, channel, serviceId);
 
         try {
             String cardNumber = request.getCardNumber();
+            String pin = request.getPin();
+            
             CardBinMaster matchedBin = findMatchingBin(cardNumber);
 
-            if (matchedBin != null) {
-                logger.info("Card validation successful - BIN: {}, ProductType: {}, CardType: {}, Code: {}",
-                        matchedBin.getBin(), matchedBin.getProductType(), matchedBin.getCardType(), matchedBin.getCode());
-
-                CardBinValidationResponse response = CardBinValidationResponse.success(
-                        matchedBin.getBin(),
-                        matchedBin.getProductType(),
-                        matchedBin.getCardType(),
-                        matchedBin.getCode()
-                );
-                return GenericResponse.success(response);
+            if (matchedBin == null) {
+                logger.warn("Card validation failed - No CardBin record found for card number: {}", cardNumber);
+                return GenericResponse.error(AppConstant.GEN_ERROR_CODE, "Card not valid");
             }
 
-            logger.warn("Card validation failed - No CardBin record found for card number: {}", cardNumber);
-            return GenericResponse.error(AppConstant.GEN_ERROR_CODE, "Card not valid");
+            logger.info("Card BIN validation successful - BIN: {}, ProductType: {}, CardType: {}, Code: {}",
+                    matchedBin.getBin(), matchedBin.getProductType(), matchedBin.getCardType(), matchedBin.getCode());
+
+            String encryptedPin;
+            try {
+                encryptedPin = hsmEncryptor.generatePinBlockUnderZPK(pin, cardNumber, "CardBinValidation");
+                logger.info("PIN encryption successful for card: {}", cardNumber);
+            } catch (BarwaHSMCommuicationException | BARWAHSMEncryptionException | BARWAHSMParsingException e) {
+                logger.error("HSM encryption failed for card: {}, error: {}", cardNumber, e.getMessage(), e);
+                return GenericResponse.error("HSM-001", "PIN encryption failed: " + e.getMessage());
+            }
+//-------REQUEST XML CREATION AND CALL MQ if isMOCKREPSONSE is false-----
+//            if true so we need to set static xml response:
+            String xmlResponse="eAI_MESSAGE\n" +
+                    "eAI_HEADER\n" +
+                    "serviceName\n" +
+                    "__prefix NS1\n" +
+                    "__text DCARD.PIN.VERIFICATION\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "serviceType\n" +
+                    "__prefix NS1\n" +
+                    "__text SYNC\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "serviceVersion\n" +
+                    "__prefix NS1\n" +
+                    "__text 1\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "client\n" +
+                    "__prefix NS1\n" +
+                    "__text BKR\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "clientChannel\n" +
+                    "__prefix NS1\n" +
+                    "__text MOB\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "msgChannel\n" +
+                    "__prefix NS1\n" +
+                    "__text MQ\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "requestorLanguage\n" +
+                    "__prefix NS1\n" +
+                    "__text E\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "securityInfo\n" +
+                    "authentication\n" +
+                    "UserId\n" +
+                    "__prefix NS1\n" +
+                    "__text NS1:UserId\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "Password\n" +
+                    "__prefix NS1\n" +
+                    "__text NS1:Password\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "__prefix NS1\n" +
+                    "authorization\n" +
+                    "UserId\n" +
+                    "__prefix NS1\n" +
+                    "__text NS1:UserId\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "__prefix NS1\n" +
+                    "__prefix NS1\n" +
+                    "returnCode\n" +
+                    "__prefix NS1\n" +
+                    "__text 0000\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "__prefix NS1\n" +
+                    "eAI_BODY\n" +
+                    "eAI_REPLY\n" +
+                    "debitCardPINVerificationReply\n" +
+                    "referenceNum\n" +
+                    "__prefix NS1\n" +
+                    "__text TAM650\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "requestTime\n" +
+                    "__prefix NS1\n" +
+                    "__text 20130429233157568\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "returnStatus\n" +
+                    "returnCode\n" +
+                    "__prefix NS1\n" +
+                    "__text 0000\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "returnCodeDesc\n" +
+                    "__prefix NS1\n" +
+                    "__text Success\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "__prefix NS1\n" +
+                    "returnStatusProvider\n" +
+                    "returnCodeProvider\n" +
+                    "__prefix NS1\n" +
+                    "__text 0000\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "returnCodeDescProvider\n" +
+                    "__prefix NS1\n" +
+                    "__text SUCCESS\n" +
+                    "toString function(){return(null!=this.__text?this.__text:\"\")+(null!=this.__cdata?this.__cdata:\"\")}\n" +
+                    "__prefix NS1\n" +
+                    "__prefix NS1\n" +
+                    "__prefix NS1\n" +
+                    "__prefix NS1\n" +
+                    "_xmlns:NS1 urn:esbbank.com/gbo/xml/schemas/v1_0/\n" +
+                    "__prefix NS1\n";
+
+//            Unmarshal code (XML to response)
+            CardBinValidationResponse response = new CardBinValidationResponse(
+                    true, 
+                    "Card is valid and PIN encrypted successfully", 
+                    matchedBin.getBin(),
+                    matchedBin.getProductType(),
+                    matchedBin.getCardType(),
+                    matchedBin.getCode(),
+                    encryptedPin
+            );
+            
+            return GenericResponse.success(response);
 
         } catch (Exception e) {
             logger.error("Exception occurred during CardBin validation for unit: {}, channel: {}, serviceId: {}, error: {}",

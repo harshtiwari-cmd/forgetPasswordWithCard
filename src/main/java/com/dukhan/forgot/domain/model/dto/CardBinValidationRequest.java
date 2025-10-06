@@ -15,4 +15,7 @@ public class CardBinValidationRequest {
     @NotBlank(message = "Card number is required")
     @Pattern(regexp = "^\\d{15,}$", message = "Card number must be at least 15 digits")
     private String cardNumber;
+
+    @NotBlank
+    private String pin;
 }
