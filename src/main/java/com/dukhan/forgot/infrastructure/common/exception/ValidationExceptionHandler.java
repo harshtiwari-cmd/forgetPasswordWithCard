@@ -1,4 +1,4 @@
-package com.dukhan.forgot.infrastructure.exception;
+package com.dukhan.forgot.infrastructure.common.exception;
 
 import com.dukhan.forgot.infrastructure.common.AppConstant;
 import com.dukhan.forgot.infrastructure.common.GenericResponse;
