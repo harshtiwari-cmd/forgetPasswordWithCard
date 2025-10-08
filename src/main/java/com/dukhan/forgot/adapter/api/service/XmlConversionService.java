@@ -32,7 +32,7 @@ public class XmlConversionService {
      * @throws Exception if conversion fails
      */
     public String convertDcardPinVerificationToXml(Map<String, Object> headers, Map<String, Object> payload) throws Exception {
-        logger.info("Starting XML conversion for DCARD.PIN.VERIFICATION service");
+        logger.info("Starting XML conversion for DCARD.PIN.VERIFICATION");
         
         try {
             if (!xsdParserService.validateDcardPinVerificationXsdExists()) {
