@@ -22,9 +22,13 @@ public class CardBinValidationController {
     
     private static final Logger logger = LoggerFactory.getLogger(CardBinValidationController.class);
     
-    @Autowired
-    private CardBinValidationService cardBinValidationService;
     
+    private final CardBinValidationService cardBinValidationService;
+
+    public CardBinValidationController(CardBinValidationService cardBinValidationService) {
+        this.cardBinValidationService = cardBinValidationService;
+    }
+
     @PostMapping("/validate")
     public GenericResponse<CardBinValidationResponse> validateCardBin(
             @RequestHeader(name = AppConstant.UNIT, required = false) String unit,

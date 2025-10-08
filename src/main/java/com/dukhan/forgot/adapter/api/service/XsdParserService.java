@@ -19,35 +19,35 @@ import java.util.List;
  */
 @Service
 public class XsdParserService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(XsdParserService.class);
-    
+
     private static final String XSD_PATH_PREFIX = "xsd/";
     private static final String XSD_EXTENSION = ".xsd";
     private static final String XSD_NAMESPACE = "http://www.w3.org/2001/XMLSchema";
-    
+
     /**
      * Parse XSD file for DCARD.PIN.VERIFICATION service
-     * 
+     *
      * @return Parsed XSD Document
      * @throws Exception if XSD file not found or parsing fails
      */
     public Document parseDcardPinVerificationXsd() throws Exception {
         logger.info("Parsing XSD for DCARD.PIN.VERIFICATION service");
-        
+
         String xsdFileName = "DCARD.PIN.VERIFICATION" + XSD_EXTENSION;
         String xsdPath = XSD_PATH_PREFIX + xsdFileName;
-        
+
         try {
             ClassPathResource resource = new ClassPathResource(xsdPath);
             if (!resource.exists()) {
                 throw new IllegalArgumentException("XSD file not found: " + xsdPath);
             }
-            
+
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
             DocumentBuilder builder = factory.newDocumentBuilder();
-            
+
             try (InputStream inputStream = resource.getInputStream()) {
                 Document document = builder.parse(inputStream);
                 logger.info("Successfully parsed XSD file: {}", xsdPath);
@@ -58,26 +58,26 @@ public class XsdParserService {
             throw new Exception("Failed to parse XSD file: " + xsdPath, e);
         }
     }
-    
+
     /**
      * Extract mandatory fields from XSD document
-     * 
+     *
      * @param xsdDoc The parsed XSD document
      * @return List of mandatory field names
      */
     public List<String> getMandatoryFieldsFromXsd(Document xsdDoc) {
         logger.info("Extracting mandatory fields from XSD document");
-        
+
         List<String> mandatoryFields = new ArrayList<>();
-        
+
         try {
             // Find all elements with minOccurs="1"
             NodeList elements = xsdDoc.getElementsByTagNameNS(XSD_NAMESPACE, "element");
-            
+
             for (int i = 0; i < elements.getLength(); i++) {
                 Element element = (Element) elements.item(i);
                 String minOccurs = element.getAttribute("minOccurs");
-                
+
                 // If minOccurs is "1" or not specified (default is 1)
                 if ("1".equals(minOccurs) || minOccurs.isEmpty()) {
                     String elementName = element.getAttribute("name");
@@ -87,40 +87,45 @@ public class XsdParserService {
                     }
                 }
             }
-            
+
             logger.info("Extracted {} mandatory fields from XSD", mandatoryFields.size());
         } catch (Exception e) {
             logger.error("Error extracting mandatory fields from XSD: {}", e.getMessage(), e);
         }
-        
+
         return mandatoryFields;
     }
-    
+
     /**
      * Get the target namespace from XSD document
-     * 
+     *
      * @param xsdDoc The parsed XSD document
      * @return Target namespace URI
      */
     public String getTargetNamespace(Document xsdDoc) {
         try {
             Element schemaElement = xsdDoc.getDocumentElement();
-            return schemaElement.getAttribute("targetNamespace");
+            String targetNamespace = schemaElement.getAttribute("targetNamespace");
+            if (targetNamespace == null || targetNamespace.isBlank()) {
+                return "urn:esbbank.com/gbo/xml/schemas/v1_0/";
+            }
+            return targetNamespace;
         } catch (Exception e) {
             logger.error("Error getting target namespace from XSD: {}", e.getMessage(), e);
             return "urn:esbbank.com/gbo/xml/schemas/v1_0/";
         }
     }
-    
+
+
     /**
      * Validate if DCARD.PIN.VERIFICATION XSD file exists
-     * 
+     *
      * @return true if XSD file exists, false otherwise
      */
     public boolean validateDcardPinVerificationXsdExists() {
         String xsdFileName = "DCARD.PIN.VERIFICATION" + XSD_EXTENSION;
         String xsdPath = XSD_PATH_PREFIX + xsdFileName;
-        
+
         try {
             ClassPathResource resource = new ClassPathResource(xsdPath);
             boolean exists = resource.exists();

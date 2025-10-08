@@ -15,8 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/card")
 public class CardValidationController {
 
-    @Autowired
-    private CardValidationService cardValidationService;
+
+    private final CardValidationService cardValidationService;
+
+    public CardValidationController(CardValidationService cardValidationService) {
+        this.cardValidationService = cardValidationService;
+    }
 
     @PostMapping("/validate")
     public GenericResponse<CardValidationResponse> validateCard(@RequestBody CardValidationRequest request) {
