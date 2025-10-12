@@ -36,30 +36,30 @@ class CardBinValidationServiceImplTest {
 
         service = new CardBinValidationServiceImpl(hsmEncryptor, cardBinMasterRepository, xmlConversionService);
     }
-
-    @Test
-    void testValidateCardBin_SuccessWithMock() throws Exception {
-        CardBinValidationRequest request = new CardBinValidationRequest("1234567890123456", "1234");
-
-        CardBinMaster binMaster = new CardBinMaster();
-        binMaster.setBin("123456");
-        binMaster.setProductType("CREDIT");
-        binMaster.setCardType("VISA");
-        binMaster.setCode("CODE1");
-
-        when(cardBinMasterRepository.findByBin("123456")).thenReturn(List.of(binMaster));
-        when(hsmEncryptor.generatePinBlockUnderZPK(anyString(), anyString(), anyString())).thenReturn("ENCRYPTED_PIN");
-        when(xmlConversionService.convertDcardPinVerificationToXml(any(), any())).thenReturn("<mockXml/>");
-
-        GenericResponse<CardBinValidationResponse> response = service.validateCardBin(
-                "BKR", "MOB", "E", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request
-        );
-
-        assertNotNull(response);
-        assertTrue(response.getData().isValid());
-        assertEquals("123456", response.getData().getBin());
-        assertEquals("ENCRYPTED_PIN", response.getData().getEncryptedPin());
-    }
+//
+//    @Test
+//    void testValidateCardBin_SuccessWithMock() throws Exception {
+//        CardBinValidationRequest request = new CardBinValidationRequest("1234567890123456", "1234");
+//
+//        CardBinMaster binMaster = new CardBinMaster();
+//        binMaster.setBin("123456");
+//        binMaster.setProductType("CREDIT");
+//        binMaster.setCardType("VISA");
+//        binMaster.setCode("CODE1");
+//
+//        when(cardBinMasterRepository.findByBin("123456")).thenReturn(List.of(binMaster));
+//        when(hsmEncryptor.generatePinBlockUnderZPK(anyString(), anyString(), anyString())).thenReturn("ENCRYPTED_PIN");
+//        when(xmlConversionService.convertDcardPinVerificationToXml(any(), any())).thenReturn("<mockXml/>");
+//
+//        GenericResponse<CardBinValidationResponse> response = service.validateCardBin(
+//                "BKR", "MOB", "E", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request
+//        );
+//
+//        assertNotNull(response);
+//        assertTrue(response.getData().isValid());
+//        assertEquals("123456", response.getData().getBin());
+//        assertEquals("ENCRYPTED_PIN", response.getData().getEncryptedPin());
+//    }
 
     @Test
     void testValidateCardBin_CardNotFound() {

@@ -21,7 +21,7 @@ import java.util.Collections;
 public class CardBinValidationController {
     
     private static final Logger logger = LoggerFactory.getLogger(CardBinValidationController.class);
-    
+
     
     private final CardBinValidationService cardBinValidationService;
 
@@ -31,13 +31,13 @@ public class CardBinValidationController {
 
     @PostMapping("/validate")
     public GenericResponse<CardBinValidationResponse> validateCardBin(
-            @RequestHeader(name = AppConstant.UNIT, required = false) String unit,
-            @RequestHeader(name = AppConstant.HEADER_CHANNEL, required = false) String channel,
-            @RequestHeader(name = AppConstant.HEADER_ACCEPT_LANGUAGE, required = false) String lang,
-            @RequestHeader(name = AppConstant.SERVICEID, required = false) String serviceId,
-            @RequestHeader(name = AppConstant.SCREEN_ID, required = false) String screenId,
-            @RequestHeader(name = AppConstant.MODULE_ID, required = false) String moduleId,
-            @RequestHeader(name = AppConstant.SUB_MODULE_ID, required = false) String subModuleId,
+            @RequestHeader(name = AppConstant.UNIT, required = true) String unit,
+            @RequestHeader(name = AppConstant.HEADER_CHANNEL, required = true) String channel,
+            @RequestHeader(name = AppConstant.HEADER_ACCEPT_LANGUAGE, required = true) String lang,
+            @RequestHeader(name = AppConstant.SERVICEID, required = true) String serviceId,
+            @RequestHeader(name = AppConstant.SCREEN_ID, required = true) String screenId,
+            @RequestHeader(name = AppConstant.MODULE_ID, required = true) String moduleId,
+            @RequestHeader(name = AppConstant.SUB_MODULE_ID, required = true) String subModuleId,
             @Valid @RequestBody CardBinValidationRequest request) {
         
         logger.info("CardBin validation and PIN encryption request received - Unit: {}, Channel: {}, ServiceId: {}, CardNumber: {}",
