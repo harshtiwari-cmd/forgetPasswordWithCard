@@ -15,7 +15,7 @@ import com.dukhan.forgot.infrastructure.common.hsm.HSMEncryptorManagerImpl;
 import com.dukhan.forgot.infrastructure.common.xmlResponse.DebitCardPINVerificationReply;
 import com.dukhan.forgot.infrastructure.common.xmlResponse.EAIMessage;
 //import com.dukhan.forgot.infrastructure.mq.JmsRequestReplyService;
-import com.dukhan.forgot.infrastructure.mq.JmsRequestReplyService;
+//import com.dukhan.forgot.infrastructure.mq.JmsRequestReplyService;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.slf4j.Logger;
@@ -39,7 +39,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
     private CardBinMasterRepository cardBinMasterRepository;
     private final HSMEncryptorManagerImpl hsmEncryptor;
     private final XmlConversionService xmlConversionService;
-    private JmsRequestReplyService jmsRequestReplyService;
+  //  private JmsRequestReplyService jmsRequestReplyService;
 
     public CardBinValidationServiceImpl(HSMEncryptorManagerImpl hsmEncryptor, CardBinMasterRepository cardBinMasterRepository, XmlConversionService xmlConversionService) {
         this.hsmEncryptor = hsmEncryptor;
@@ -108,9 +108,9 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                 }
             }
          //--------JMS REQUEST--------------
-          else {
-              jmsRequestReplyService.sendRequestAndWaitForReply(
-                       "correlationId", xmlRequest);           }
+//          else {
+//              jmsRequestReplyService.sendRequestAndWaitForReply(
+//                       "correlationId", xmlRequest);           }
 
             CardBinValidationResponse response = new CardBinValidationResponse(
                     true, 

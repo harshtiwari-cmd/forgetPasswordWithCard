@@ -3,6 +3,7 @@ package com.dukhan.forgot.adapter.api.controller;
 import com.dukhan.forgot.adapter.api.service.CardBinValidationService;
 import com.dukhan.forgot.domain.model.dto.CardBinValidationRequest;
 import com.dukhan.forgot.domain.model.dto.CardBinValidationResponse;
+import com.dukhan.forgot.domain.model.dto.CardBinValidationWrapper;
 import com.dukhan.forgot.infrastructure.common.AppConstant;
 import com.dukhan.forgot.infrastructure.common.GenericResponse;
 import com.dukhan.forgot.domain.model.entity.CardBinMaster;
@@ -38,9 +39,11 @@ public class CardBinValidationController {
             @RequestHeader(name = AppConstant.SCREEN_ID, required = true) String screenId,
             @RequestHeader(name = AppConstant.MODULE_ID, required = true) String moduleId,
             @RequestHeader(name = AppConstant.SUB_MODULE_ID, required = true) String subModuleId,
-            @Valid @RequestBody CardBinValidationRequest request) {
-        
-        logger.info("CardBin validation and PIN encryption request received - Unit: {}, Channel: {}, ServiceId: {}, CardNumber: {}",
+            @Valid @RequestBody CardBinValidationWrapper wrapper) {
+
+           CardBinValidationRequest request = wrapper.getRequestInfo();
+
+           logger.info("CardBin validation and PIN encryption request received - Unit: {}, Channel: {}, ServiceId: {}, CardNumber: {}",
                 unit, channel, serviceId, maskCardNumber(request.getCardNumber()));
         
         try {
