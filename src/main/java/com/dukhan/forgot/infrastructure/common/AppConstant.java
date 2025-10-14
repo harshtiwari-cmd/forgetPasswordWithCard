@@ -51,11 +51,13 @@ public class AppConstant {
 	public static final String LOGIN_SERVICE_ID = "LOGIN";
 
 	public static final String SUCCESS = "SUCCESS";
+	public static final String NODATA = "NO DATA CONTENT";
 
 	public static final String ACT = "000000";
 
 	public static final String RESULT_CODE = "000000";
-	
+	public static final String NO_DATA_CODE = "000404";
+
 	public static final String MWRESULT_CODE = "0";
 
 	public static final String SOAP_RESULT_CODE = "0";

@@ -8,16 +8,33 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: none
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://34.18.104.74:5432/dukhanbank
     driver-class-name: org.postgresql.Driver
     username: postgres
-    password: MyNewPassword123!
+    password: Poclab_123#
     hikari:
       max-lifetime: 540000
   main:
     allow-bean-definition-overriding: true
 
+logging:
+  level:
+    com.dukhan.forgot: DEBUG
+    org.springframework.web: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
 server:
-  port: 7070
+  port: 8087
+
+app:
+  security:
+    userId: ${APP_SECURITY_USER_ID:your_user_id}
+    password: ${APP_SECURITY_PASSWORD:your_password}
