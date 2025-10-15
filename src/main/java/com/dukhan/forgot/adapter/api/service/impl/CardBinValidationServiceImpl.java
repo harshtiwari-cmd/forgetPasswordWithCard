@@ -3,7 +3,7 @@ package com.dukhan.forgot.adapter.api.service.impl;
 import com.dukhan.forgot.adapter.api.service.CardBinValidationService;
 import com.dukhan.forgot.adapter.api.service.XmlConversionService;
 import com.dukhan.forgot.domain.model.dto.CardBinValidationRequest;
-import com.dukhan.forgot.domain.model.dto.CardBinValidationResponse;
+import com.dukhan.forgot.domain.model.dto.SimpleValidationResponse;
 import com.dukhan.forgot.domain.model.entity.CardBinMaster;
 import com.dukhan.forgot.domain.repository.CardBinMasterRepository;
 import com.dukhan.forgot.infrastructure.common.AppConstant;
@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +47,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
         this.xmlConversionService = xmlConversionService;
     }
     @Override
-    public GenericResponse<CardBinValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
+    public SimpleValidationResponse validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
         logger.debug("Starting CardBin validation for unit: {}, channel: {}, serviceId: {}", unit, channel, serviceId);
 
         try {
@@ -59,7 +58,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
 
             if (matchedBin == null) {
                 logger.warn("Card validation failed - No CardBin record found for card number: {}", cardNumber);
-                return GenericResponse.error(AppConstant.GEN_ERROR_CODE, "Card not valid");
+                return createErrorResponse("Card not valid");
             }
 
             logger.info("Card BIN validation successful - BIN: {}, ProductType: {}, CardType: {}, Code: {}",
@@ -71,17 +70,21 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                 logger.info("PIN encryption successful for card: {}", cardNumber);
             } catch (BarwaHSMCommuicationException | BARWAHSMEncryptionException | BARWAHSMParsingException e) {
                 logger.error("HSM encryption failed for card: {}, error: {}", cardNumber, e.getMessage(), e);
-                return GenericResponse.error("HSM-001", "PIN encryption failed: " + e.getMessage());
+                return createErrorResponse("PIN encryption failed: " + e.getMessage());
             }
-            String xmlRequest = generateXmlRequest(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, request, encryptedPin);
-            logger.info("Generated XML request for service: DCARD.PIN.VERIFICATION");
-            logger.debug("Generated XML request: {}", xmlRequest);
-            String xmlResponse;
-            if (mockMode) {
+            String xmlRequest;
+            if (!mockMode) {
+                xmlRequest = generateXmlRequest(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, request, encryptedPin);
+                logger.info("Generated XML request for service: DCARD.PIN.VERIFICATION");
+                logger.debug("Generated XML request: {}", xmlRequest);
+                String xmlResponse;
                 xmlResponse = generateMockXmlResponse();
                 logger.debug("Using mock XML response for testing");
                 logger.debug("Mock XML response: {}", xmlResponse);
-
+                //--------JMS REQUEST--------------
+//          else {
+//              jmsRequestReplyService.sendRequestAndWaitForReply(
+//                       "correlationId", xmlRequest);           }
                 try {
                     XmlMapper xmlMapper = new XmlMapper();
                     xmlMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -89,48 +92,28 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                     DebitCardPINVerificationReply reply = eaiMessage.getEaiBody().getEaiReply().getReply();
                     boolean valid = reply != null && reply.getReturnStatus() != null && "0000".equals(reply.getReturnStatus().getReturnCode());
                     String message = reply != null && reply.getReturnStatus() != null ? reply.getReturnStatus().getReturnCodeDesc() : "Unknown";
-                    CardBinValidationResponse response = new CardBinValidationResponse(
-                            valid,
-                            message,
-                            matchedBin.getBin(),
-                            matchedBin.getProductType(),
-                            matchedBin.getCardType(),
-                            matchedBin.getCode(),
-                            encryptedPin,
-                            xmlRequest,
-                            xmlResponse,
-                            eaiMessage
-                    );
-                    return GenericResponse.success(response);
+                    if (valid) {
+                        logger.info("XML validation successful, returning success response");
+                        return createSuccessResponse("2321");
+                    } else {
+                        logger.warn("XML validation failed: {}", message);
+                        return createErrorResponse("Validation failed: " + message);
+                    }
                 } catch (Exception e) {
                     logger.error("Error parsing XML response: {}", e.getMessage(), e);
-                    return GenericResponse.error(AppConstant.GEN_ERROR_CODE, "Failed to parse XML response");
+                    return createErrorResponse("Failed to parse XML response");
                 }
             }
-         //--------JMS REQUEST--------------
-//          else {
-//              jmsRequestReplyService.sendRequestAndWaitForReply(
-//                       "correlationId", xmlRequest);           }
-
-            CardBinValidationResponse response = new CardBinValidationResponse(
-                    true, 
-                    "Card is valid and PIN encrypted successfully", 
-                    matchedBin.getBin(),
-                    matchedBin.getProductType(),
-                    matchedBin.getCardType(),
-                    matchedBin.getCode(),
-                    encryptedPin,
-                    xmlRequest,
-                    "xmlResponse",
-                    null
-            );
-            
-            return GenericResponse.success(response);
+            else{
+                // Mock mode - return success response
+                logger.info("Mock mode - returning success response");
+                return createSuccessResponse("2321");
+            }
 
         } catch (Exception e) {
             logger.error("Exception occurred during CardBin validation for unit: {}, channel: {}, serviceId: {}, error: {}",
                     unit, channel, serviceId, e.getMessage(), e);
-            return GenericResponse.error(AppConstant.GEN_ERROR_CODE, AppConstant.GEN_ERROR_DESC);
+            return createErrorResponse(AppConstant.GEN_ERROR_DESC);
         }
     }
 
@@ -205,6 +188,26 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
         }
     }
     
+    /**
+     * Create success response
+     */
+    private SimpleValidationResponse createSuccessResponse(String rimNumber) {
+        return SimpleValidationResponse.builder()
+                .rimNumber(rimNumber)
+                .otp(true)
+                .build();
+    }
+    
+    /**
+     * Create error response
+     */
+    private SimpleValidationResponse createErrorResponse(String message) {
+        return SimpleValidationResponse.builder()
+                .rimNumber(null)
+                .otp(false)
+                .build();
+    }
+
     /**
      * Generate mock XML response for testing
      */

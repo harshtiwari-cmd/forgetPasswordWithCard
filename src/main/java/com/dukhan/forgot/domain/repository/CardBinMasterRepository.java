@@ -18,6 +18,6 @@ public interface CardBinMasterRepository extends JpaRepository<CardBinMaster, St
     @Query("SELECT c FROM CardBinMaster c WHERE c.bin LIKE :binPrefix%")
     Optional<CardBinMaster> findByBinStartingWith(@Param("binPrefix") String binPrefix);
 
-    @Query("SELECT c FROM CardBinMaster c WHERE LOWER(c.status) = 'active'")
+    @Query("SELECT c FROM CardBinMaster c WHERE UPPER(c.status) = 'ACTIVE'")
     List<CardBinMaster> findAllActive();
 }
