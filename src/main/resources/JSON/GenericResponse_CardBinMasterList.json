@@ -1,0 +1,29 @@
+{
+  "data": [
+    {
+      "code": "VISA001",
+      "bin": "411111",
+      "productType": "Visa Classic",
+      "cardType": "DEBIT",
+      "status": "ACTIVE"
+    },
+    {
+      "code": "MC001",
+      "bin": "555555",
+      "productType": "Mastercard Gold",
+      "cardType": "CREDIT",
+      "status": "ACTIVE"
+    },
+    {
+      "code": "AMEX001",
+      "bin": "378282",
+      "productType": "American Express",
+      "cardType": "CREDIT",
+      "status": "ACTIVE"
+    }
+  ],
+  "status": {
+    "code": "000000",
+    "description": "SUCCESS"
+  }
+}

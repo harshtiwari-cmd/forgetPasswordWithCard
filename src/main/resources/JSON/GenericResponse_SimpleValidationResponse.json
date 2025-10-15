@@ -1,0 +1,11 @@
+{
+  "data": {
+    "rimNumber": "1234567890123456",
+    "userName": "testuser@example.com",
+    "otp": true
+  },
+  "status": {
+    "code": "000000",
+    "description": "SUCCESS"
+  }
+}

@@ -43,21 +43,22 @@ public class CardBinValidationController {
                 unit, channel, serviceId, maskCardNumber(request.getCardNumber()));
         
         try {
-            // Check card number length first
             if (request.getCardNumber() == null || request.getCardNumber().length() != 16) {
                 logger.warn("Card validation failed - Card number must be at least 16 digits. Provided length: {}",
                     request.getCardNumber() != null ? request.getCardNumber().length() : 0);
                 return ResponseEntity.ok(GenericResponse.error(AppConstant.CARD_LENGTH_ERROR_CODE, AppConstant.CARD_LENGTH_ERROR_DESC));
             }
             
-            SimpleValidationResponse data = cardBinValidationService.validateCardBin(
+            GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
                     unit, channel, lang, serviceId, screenId, moduleId, subModuleId, request);
             
-            // Check if this is a validation failure (BIN validation, encryption, etc.)
-            if (data.getRimNumber() == null && data.getUserName() == null && !data.isOtp()) {
+            if (response == null || response.getStatus() == null || !AppConstant.RESULT_CODE.equals(response.getStatus().getCode())) {
                 return ResponseEntity.ok(GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC));
             }
-            
+            SimpleValidationResponse data = response.getData();
+            if (data == null || (data.getRimNumber() == null && data.getUserName() == null && !data.isOtp())) {
+                return ResponseEntity.ok(GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC));
+            }
             return ResponseEntity.ok(GenericResponse.success(data));
         } catch (Exception e) {
             logger.error("Error occurred during CardBin validation and PIN encryption - Unit: {}, Channel: {}, ServiceId: {}, Error: {}",
@@ -90,7 +91,12 @@ public class CardBinValidationController {
                 serviceId, moduleId, subModuleId, screenId, channel, wrapper.getDeviceInfo().getDeviceId());
         try {
             GenericResponse<java.util.List<CardBinMaster>> response = cardBinValidationService.getActiveBins();
-            if (response == null || response.getData() == null || response.getData().isEmpty()) {
+            if (response == null || response.getStatus() == null || !AppConstant.RESULT_CODE.equals(response.getStatus().getCode())) {
+                logger.error("Service returned error response for getActiveBins");
+                return GenericResponse.error(AppConstant.GEN_ERROR_CODE, AppConstant.GEN_ERROR_DESC);
+            }
+            
+            if (response.getData() == null || response.getData().isEmpty()) {
                 logger.info("No active CardBin records found");
                 return GenericResponse.successNoData(Collections.emptyList());
             }
