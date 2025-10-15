@@ -7,6 +7,7 @@ import com.dukhan.forgot.infrastructure.common.GenericResponse;
 import com.dukhan.forgot.domain.model.entity.CardBinMaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +27,7 @@ public class CardBinValidationController {
     }
 
     @PostMapping("/validate")
-    public GenericResponse<SimpleValidationResponse> validateCardBin(
+    public ResponseEntity<GenericResponse<SimpleValidationResponse>> validateCardBin(
             @RequestHeader(name = AppConstant.UNIT, required = true) String unit,
             @RequestHeader(name = AppConstant.HEADER_CHANNEL, required = true) String channel,
             @RequestHeader(name = AppConstant.HEADER_ACCEPT_LANGUAGE, required = true) String lang,
@@ -42,10 +43,22 @@ public class CardBinValidationController {
                 unit, channel, serviceId, maskCardNumber(request.getCardNumber()));
         
         try {
+            // Check card number length first
+            if (request.getCardNumber() == null || request.getCardNumber().length() != 16) {
+                logger.warn("Card validation failed - Card number must be at least 16 digits. Provided length: {}",
+                    request.getCardNumber() != null ? request.getCardNumber().length() : 0);
+                return ResponseEntity.ok(GenericResponse.error(AppConstant.CARD_LENGTH_ERROR_CODE, AppConstant.CARD_LENGTH_ERROR_DESC));
+            }
+            
             SimpleValidationResponse data = cardBinValidationService.validateCardBin(
                     unit, channel, lang, serviceId, screenId, moduleId, subModuleId, request);
             
-            return GenericResponse.success(data);
+            // Check if this is a validation failure (BIN validation, encryption, etc.)
+            if (data.getRimNumber() == null && data.getUserName() == null && !data.isOtp()) {
+                return ResponseEntity.ok(GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC));
+            }
+            
+            return ResponseEntity.ok(GenericResponse.success(data));
         } catch (Exception e) {
             logger.error("Error occurred during CardBin validation and PIN encryption - Unit: {}, Channel: {}, ServiceId: {}, Error: {}",
                     unit, channel, serviceId, e.getMessage(), e);

@@ -21,14 +21,12 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Service
 @Transactional
 public class CardBinValidationServiceImpl implements CardBinValidationService {
     @Value("${hsm.mock:true}")
@@ -58,7 +56,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
 
             if (matchedBin == null) {
                 logger.warn("Card validation failed - No CardBin record found for card number: {}", cardNumber);
-                return createErrorResponse("Card not valid");
+                return createValidationFailureResponse();
             }
 
             logger.info("Card BIN validation successful - BIN: {}, ProductType: {}, CardType: {}, Code: {}",
@@ -70,7 +68,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                 logger.info("PIN encryption successful for card: {}", cardNumber);
             } catch (BarwaHSMCommuicationException | BARWAHSMEncryptionException | BARWAHSMParsingException e) {
                 logger.error("HSM encryption failed for card: {}, error: {}", cardNumber, e.getMessage(), e);
-                return createErrorResponse("PIN encryption failed: " + e.getMessage());
+                return createValidationFailureResponse();
             }
             String xmlRequest;
             if (!mockMode) {
@@ -97,11 +95,11 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                         return createSuccessResponse("2321");
                     } else {
                         logger.warn("XML validation failed: {}", message);
-                        return createErrorResponse("Validation failed: " + message);
+                        return createValidationFailureResponse();
                     }
                 } catch (Exception e) {
                     logger.error("Error parsing XML response: {}", e.getMessage(), e);
-                    return createErrorResponse("Failed to parse XML response");
+                    return createValidationFailureResponse();
                 }
             }
             else{
@@ -113,7 +111,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
         } catch (Exception e) {
             logger.error("Exception occurred during CardBin validation for unit: {}, channel: {}, serviceId: {}, error: {}",
                     unit, channel, serviceId, e.getMessage(), e);
-            return createErrorResponse(AppConstant.GEN_ERROR_DESC);
+            return createValidationFailureResponse();
         }
     }
 
@@ -194,16 +192,18 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
     private SimpleValidationResponse createSuccessResponse(String rimNumber) {
         return SimpleValidationResponse.builder()
                 .rimNumber(rimNumber)
+                .userName("user123")
                 .otp(true)
                 .build();
     }
     
     /**
-     * Create error response
+     * Create validation failure error response
      */
-    private SimpleValidationResponse createErrorResponse(String message) {
+    private SimpleValidationResponse createValidationFailureResponse() {
         return SimpleValidationResponse.builder()
                 .rimNumber(null)
+                .userName(null)
                 .otp(false)
                 .build();
     }

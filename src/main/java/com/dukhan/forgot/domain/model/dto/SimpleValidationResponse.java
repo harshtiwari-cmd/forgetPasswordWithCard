@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class SimpleValidationResponse {
     
     private String rimNumber;
+    private String userName;
     private boolean otp;
     
 

@@ -57,6 +57,7 @@ public class AppConstant {
 
 	public static final String RESULT_CODE = "000000";
 	public static final String NO_DATA_CODE = "000404";
+	public static final String ERROR_DATA_CODE = "000400";
 
 	public static final String MWRESULT_CODE = "0";
 
@@ -67,6 +68,14 @@ public class AppConstant {
 	public static final String GEN_ERROR_CODE = "000001";
 
 	public static final String GEN_ERROR_DESC = "Unable to process your request,Please contact Customer Care for futher assistance or try again later";
+
+	public static final String CARD_LENGTH_ERROR_CODE = "000400";
+
+	public static final String CARD_LENGTH_ERROR_DESC = "Card number must be at least 16 digits";
+
+	public static final String VALIDATION_FAILURE_CODE = "000500";
+
+	public static final String VALIDATION_FAILURE_DESC = "FAILURE";
 
 	public static final String GLOBAL_ID = "globalId";
 	public static final String GUID = "guid";
