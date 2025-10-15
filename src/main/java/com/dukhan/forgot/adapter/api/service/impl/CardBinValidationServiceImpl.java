@@ -21,13 +21,15 @@ import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Transactional
+@Service
+@ConditionalOnProperty(name = "mock.enabled", havingValue = "false", matchIfMissing = true)
 public class CardBinValidationServiceImpl implements CardBinValidationService {
     @Value("${hsm.mock:true}")
     private boolean mockMode;
@@ -45,7 +47,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
         this.xmlConversionService = xmlConversionService;
     }
     @Override
-    public SimpleValidationResponse validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
+    public GenericResponse<SimpleValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
         logger.debug("Starting CardBin validation for unit: {}, channel: {}, serviceId: {}", unit, channel, serviceId);
 
         try {
@@ -92,7 +94,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                     String message = reply != null && reply.getReturnStatus() != null ? reply.getReturnStatus().getReturnCodeDesc() : "Unknown";
                     if (valid) {
                         logger.info("XML validation successful, returning success response");
-                        return createSuccessResponse("2321");
+                        return GenericResponse.success(createSuccessResponse("2321"));
                     } else {
                         logger.warn("XML validation failed: {}", message);
                         return createValidationFailureResponse();
@@ -105,7 +107,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
             else{
                 // Mock mode - return success response
                 logger.info("Mock mode - returning success response");
-                return createSuccessResponse("2321");
+                return GenericResponse.success(createSuccessResponse("2321"));
             }
 
         } catch (Exception e) {
@@ -200,12 +202,8 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
     /**
      * Create validation failure error response
      */
-    private SimpleValidationResponse createValidationFailureResponse() {
-        return SimpleValidationResponse.builder()
-                .rimNumber(null)
-                .userName(null)
-                .otp(false)
-                .build();
+    private GenericResponse<SimpleValidationResponse> createValidationFailureResponse() {
+        return GenericResponse.error(AppConstant.GEN_ERROR_CODE, AppConstant.GEN_ERROR_DESC);
     }
 
     /**
