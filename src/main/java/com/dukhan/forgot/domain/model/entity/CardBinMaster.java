@@ -1,6 +1,7 @@
 package com.dukhan.forgot.domain.model.entity;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,6 +13,7 @@ import jakarta.validation.constraints.Size;
 @Entity
 @Table(name = "card_bin_master")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class CardBinMaster {

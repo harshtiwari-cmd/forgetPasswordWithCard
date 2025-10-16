@@ -1,6 +1,7 @@
 package com.dukhan.forgot.domain.model.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -8,6 +9,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class CardBinValidationRequest {

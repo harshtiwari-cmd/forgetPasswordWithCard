@@ -1,6 +1,8 @@
 mock:
   enabled: false
-
+otp:
+  service:
+    url: http://34.18.65.88:9096/rb-user-management/api/v1/otp/generate
 bank:
   middleware:
     url: http://localhost:8080

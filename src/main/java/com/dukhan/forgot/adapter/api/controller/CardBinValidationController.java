@@ -102,7 +102,7 @@ public class CardBinValidationController {
         }
     }
 
-    private String maskCardNumber(String cardNumber) {
+    public String maskCardNumber(String cardNumber) {
         if (cardNumber == null || cardNumber.length() < 8) {
             return "****";
         }

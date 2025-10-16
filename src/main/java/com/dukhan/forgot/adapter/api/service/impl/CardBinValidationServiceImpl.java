@@ -2,13 +2,17 @@ package com.dukhan.forgot.adapter.api.service.impl;
 
 import com.dukhan.forgot.adapter.api.service.BankMiddlewareService;
 import com.dukhan.forgot.adapter.api.service.CardBinValidationService;
-import com.dukhan.forgot.adapter.api.service.XmlConversionService;
+import com.dukhan.forgot.adapter.api.service.OtpService;
 import com.dukhan.forgot.domain.model.dto.BankMiddlewareRequest;
 import com.dukhan.forgot.domain.model.dto.BankMiddlewareResponse;
 import com.dukhan.forgot.domain.model.dto.CardBinValidationRequest;
+import com.dukhan.forgot.domain.model.dto.DeviceInfo;
+import com.dukhan.forgot.domain.model.dto.OtpGenerateRequest;
+import com.dukhan.forgot.domain.model.dto.OtpGenerateResponse;
 import com.dukhan.forgot.domain.model.dto.SimpleValidationResponse;
 import com.dukhan.forgot.domain.model.entity.CardBinMaster;
 import com.dukhan.forgot.domain.repository.CardBinMasterRepository;
+import com.dukhan.forgot.domain.repository.CustomerRepository;
 import com.dukhan.forgot.infrastructure.common.AppConstant;
 import com.dukhan.forgot.infrastructure.common.GenericResponse;
 import com.dukhan.forgot.infrastructure.common.exception.BARWAHSMEncryptionException;
@@ -32,11 +36,13 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
     @Autowired
     private CardBinMasterRepository cardBinMasterRepository;
     @Autowired
+    private CustomerRepository customerRepository;
+    @Autowired
     private HSMEncryptorManagerImpl hsmEncryptor;
     @Autowired
-    private XmlConversionService xmlConversionService;
-    @Autowired
     private BankMiddlewareService bankMiddlewareService;
+    @Autowired
+    private OtpService otpService;
 
     @Override
     public GenericResponse<SimpleValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
@@ -67,15 +73,33 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
 
             try {
                 BankMiddlewareResponse bankResponse = callBankMiddlewareAPI(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, cardNumber, encryptedPin);
-                
                 if (bankResponse != null && "SUCCESS".equals(bankResponse.getStatus())) {
                     String customerNumber = bankResponse.getBankResponse().getCustomerNumber();
                     String correlationId = bankResponse.getBankResponse().getCorrelationId();
                     
                     logger.info("Bank middleware API call successful - CustomerNumber: {}, CorrelationId: {}", customerNumber, correlationId);
                     
-                    SimpleValidationResponse successResponse = createSuccessResponse(customerNumber, correlationId);
-                    return GenericResponse.success(successResponse);
+                    String username = getCustomerUsername(customerNumber);
+                    if (username == null) {
+                        logger.warn("Customer not found in database for customerNumber: {}", customerNumber);
+                        return createValidationFailureResponse();
+                    }
+                    OtpGenerateResponse otpResponse = callOtpGenerationAPI(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, customerNumber);
+                    if (otpResponse != null && otpResponse.getStatus() != null &&
+                        "000000".equals(otpResponse.getStatus().getCode()) && 
+                        "SUCCESS".equals(otpResponse.getStatus().getDescription())) {
+                        logger.info("OTP generation successful for customer: {}", customerNumber);
+                        
+                        SimpleValidationResponse successResponse = createSuccessResponseWithUsername(customerNumber, username);
+                        return GenericResponse.success(successResponse);
+                    } else {
+                        logger.warn("OTP generation failed - Status: {}, Message: {}", 
+                                otpResponse != null && otpResponse.getStatus() != null ? 
+                                    otpResponse.getStatus().getDescription() : "NULL", 
+                                otpResponse != null && otpResponse.getData() != null ? 
+                                    otpResponse.getData().getMessage() : "No response");
+                        return createValidationFailureResponse();
+                    }
                 } else {
                     logger.warn("Bank middleware API call failed - Status: {}, Message: {}", 
                             bankResponse != null ? bankResponse.getStatus() : "NULL", 
@@ -170,67 +194,72 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
         }
     }
     
-    /**
-     * Create success response
-     */
-    private SimpleValidationResponse createSuccessResponse(String customerNumber, String correlationId) {
+
+    private SimpleValidationResponse createSuccessResponseWithUsername(String customerNumber, String username) {
         return SimpleValidationResponse.builder()
-                .rimNumber(customerNumber) // Using customerNumber as rimNumber
-                .userName("user123")
+                .rimNumber(customerNumber)
+                .userName(username)
                 .otp(true)
                 .build();
     }
-    
-    /**
-     * Create validation failure error response
-     */
+
+    private String getCustomerUsername(String customerNumber) {
+        try {
+            logger.debug("Looking up customer username for customerNumber: {}", customerNumber);
+            Long customerId = Long.parseLong(customerNumber);
+            return customerRepository.findUsernameByCustomerId(customerId).orElse(null);
+        } catch (NumberFormatException e) {
+            logger.error("Invalid customerNumber format: {}, must be a valid number", customerNumber);
+            return null;
+        } catch (Exception e) {
+            logger.error("Error retrieving customer username for customerNumber: {}, error: {}", customerNumber, e.getMessage(), e);
+            return null;
+        }
+    }
+
+    private OtpGenerateResponse callOtpGenerationAPI(String unit, String channel, String lang, String serviceId, 
+                                                   String screenId, String moduleId, String subModuleId, 
+                                                   String customerNumber) {
+        try {
+            OtpGenerateRequest otpRequest = OtpGenerateRequest.builder()
+                    .requestInfo(OtpGenerateRequest.RequestInfo.builder()
+                            .action("login")
+                            .rimNumber(customerNumber)
+                            .build())
+                    .deviceInfo(DeviceInfo.builder()
+                            .deviceId("DEVICE123")
+                            .ipAddress("192.168.1.1")
+                            .vendorId("VENDOR123")
+                            .osVersion("1.0.0")
+                            .osType("Android")
+                            .appVersion("2.1.0")
+                            .endToEndId("E2E123")
+                            .build())
+                    .build();
+
+            logger.debug("Calling OTP generation API for customerNumber: {}", customerNumber);
+            OtpGenerateResponse response = otpService.generateOtp(
+                    unit != null ? unit : "DEFAULT",
+                    channel != null ? channel : "WEB", 
+                    lang != null ? lang : "en",
+                    serviceId != null ? serviceId : "OTP_SERVICE",
+                    screenId != null ? screenId : "LOGIN_SCREEN",
+                    moduleId != null ? moduleId : "AUTH_MODULE",
+                    subModuleId != null ? subModuleId : "OTP_SUBMODULE",
+                    otpRequest
+            );
+            
+            logger.debug("OTP generation API response: {}", response);
+            return response;
+            
+        } catch (Exception e) {
+            logger.error("Error calling OTP generation API: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
     private GenericResponse<SimpleValidationResponse> createValidationFailureResponse() {
         return GenericResponse.error(AppConstant.GEN_ERROR_CODE, AppConstant.GEN_ERROR_DESC);
     }
 
-    /**
-     * Generate mock XML response for testing
-     */
-    private String generateMockXmlResponse() {
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<NS1:eAI_MESSAGE xmlns:NS1=\"urn:esbbank.com/gbo/xml/schemas/v1_0/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"urn:esbbank.com/gbo/xml/schemas/v1_0/ ../testGen/schema/EAI.xsd\">\n" +
-                "  <NS1:eAI_HEADER>\n" +
-                "    <NS1:serviceName>DCARD.PIN.VERIFICATION</NS1:serviceName>\n" +
-                "    <NS1:serviceType>SYNC</NS1:serviceType>\n" +
-                "    <NS1:serviceVersion>1</NS1:serviceVersion>\n" +
-                "    <NS1:client>BKR</NS1:client>\n" +
-                "    <NS1:clientChannel>MOB</NS1:clientChannel>\n" +
-                "    <NS1:msgChannel>MQ</NS1:msgChannel>\n" +
-                "    <NS1:requestorLanguage>E</NS1:requestorLanguage>\n" +
-                "    <NS1:securityInfo>\n" +
-                "      <NS1:authentication>\n" +
-                "        <NS1:UserId>your_user_id</NS1:UserId>\n" +
-                "        <NS1:Password>your_password</NS1:Password>\n" +
-                "      </NS1:authentication>\n" +
-                "      <NS1:authorization>\n" +
-                "        <NS1:UserId>your_user_id</NS1:UserId>\n" +
-                "      </NS1:authorization>\n" +
-                "    </NS1:securityInfo>\n" +
-                "    <NS1:returnCode>0000</NS1:returnCode>\n" +
-                "  </NS1:eAI_HEADER>\n" +
-                "  <NS1:eAI_BODY>\n" +
-                "    <NS1:eAI_REPLY>\n" +
-                "      <NS1:debitCardPINVerificationReply>\n" +
-                "        <NS1:referenceNum>TAM650</NS1:referenceNum>\n" +
-                "        <NS1:requestTime>20130429233157568</NS1:requestTime>\n" +
-                "        <NS1:returnStatus>\n" +
-                "          <NS1:returnCode>0000</NS1:returnCode>\n" +
-                "          <NS1:returnCodeDesc>Success</NS1:returnCodeDesc>\n" +
-                "        </NS1:returnStatus>\n" +
-                "        <NS1:returnStatusProvider>\n" +
-                "          <NS1:returnCodeProvider>0000</NS1:returnCodeProvider>\n" +
-                "          <NS1:returnCodeDescProvider>SUCCESS</NS1:returnCodeDescProvider>\n" +
-                "        </NS1:returnStatusProvider>\n" +
-                "      </NS1:debitCardPINVerificationReply>\n" +
-                "    </NS1:eAI_REPLY>\n" +
-                "  </NS1:eAI_BODY>\n" +
-                "</NS1:eAI_MESSAGE>";
-    }
-
-    // JAXB-based unmarshal removed in favor of Jackson XmlMapper
 }
