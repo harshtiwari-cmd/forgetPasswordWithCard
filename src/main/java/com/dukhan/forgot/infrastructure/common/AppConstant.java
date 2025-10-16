@@ -72,6 +72,7 @@ public class AppConstant {
 	public static final String CARD_LENGTH_ERROR_CODE = "000400";
 
 	public static final String CARD_LENGTH_ERROR_DESC = "Card number must be at least 16 digits";
+	public static final String CARD_PIN_LENGTH_ERROR_DESC = "Card pin must be at least 4 digits";
 
 	public static final String VALIDATION_FAILURE_CODE = "000500";
 

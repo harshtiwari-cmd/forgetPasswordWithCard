@@ -43,12 +43,6 @@ public class CardBinValidationController {
                 unit, channel, serviceId, maskCardNumber(request.getCardNumber()));
         
         try {
-            if (request.getCardNumber() == null || request.getCardNumber().length() != 16) {
-                logger.warn("Card validation failed - Card number must be at least 16 digits. Provided length: {}",
-                    request.getCardNumber() != null ? request.getCardNumber().length() : 0);
-                return ResponseEntity.ok(GenericResponse.error(AppConstant.CARD_LENGTH_ERROR_CODE, AppConstant.CARD_LENGTH_ERROR_DESC));
-            }
-            
             GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
                     unit, channel, lang, serviceId, screenId, moduleId, subModuleId, request);
             
@@ -63,7 +57,7 @@ public class CardBinValidationController {
         } catch (Exception e) {
             logger.error("Error occurred during CardBin validation and PIN encryption - Unit: {}, Channel: {}, ServiceId: {}, Error: {}",
                     unit, channel, serviceId, e.getMessage(), e);
-            throw e;
+            return ResponseEntity.ok(GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC));
         }
     }
     

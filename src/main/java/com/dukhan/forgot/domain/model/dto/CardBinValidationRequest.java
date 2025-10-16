@@ -11,10 +11,12 @@ import jakarta.validation.constraints.Pattern;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CardBinValidationRequest {
-    
+
     @NotBlank(message = "Card number is required")
+    @Pattern(regexp = "\\d{16}", message = "Card number must be exactly 16 digits")
     private String cardNumber;
 
-    @NotBlank
+    @NotBlank(message = "Card pin is required")
+    @Pattern(regexp = "\\d{4}", message = "Card pin must be exactly 4 digits")
     private String pin;
 }

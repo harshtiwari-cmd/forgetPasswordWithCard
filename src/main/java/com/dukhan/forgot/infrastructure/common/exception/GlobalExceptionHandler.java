@@ -1,5 +1,6 @@
 package com.dukhan.forgot.infrastructure.common.exception;
 
+import com.dukhan.forgot.infrastructure.common.AppConstant;
 import com.dukhan.forgot.infrastructure.common.GenericResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +16,16 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(GenericResponse.error("156", ex.getMessage()));
     }
-
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<GenericResponse<?>> handleValidationException(MethodArgumentNotValidException ex) {
+        String errorMsg = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(err -> err.getField() + ": " + err.getDefaultMessage())
+                .findFirst()
+                .orElse("Validation error");
+        return ResponseEntity.ok(GenericResponse.error(AppConstant.CARD_LENGTH_ERROR_CODE, errorMsg));
+    }
     @ExceptionHandler(BARWAHSMEncryptionException.class)
     public ResponseEntity<GenericResponse<Object>> handleHSMEncryptionException(BARWAHSMEncryptionException ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -27,18 +37,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(GenericResponse.error("158", ex.getMessage()));
     }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<GenericResponse<Object>> handleValidationException(MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors()
-                .stream()
-                .map(error -> error.getDefaultMessage())
-                .findFirst()
-                .orElse("Validation error");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(GenericResponse.error("400", message));
-    }
-
     @ExceptionHandler(Exception.class)
     public ResponseEntity<GenericResponse<Object>> handleGenericException(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
