@@ -1,7 +1,10 @@
 package com.dukhan.forgot.adapter.api.service.impl;
 
+import com.dukhan.forgot.adapter.api.service.BankMiddlewareService;
 import com.dukhan.forgot.adapter.api.service.CardBinValidationService;
 import com.dukhan.forgot.adapter.api.service.XmlConversionService;
+import com.dukhan.forgot.domain.model.dto.BankMiddlewareRequest;
+import com.dukhan.forgot.domain.model.dto.BankMiddlewareResponse;
 import com.dukhan.forgot.domain.model.dto.CardBinValidationRequest;
 import com.dukhan.forgot.domain.model.dto.SimpleValidationResponse;
 import com.dukhan.forgot.domain.model.entity.CardBinMaster;
@@ -12,40 +15,29 @@ import com.dukhan.forgot.infrastructure.common.exception.BARWAHSMEncryptionExcep
 import com.dukhan.forgot.infrastructure.common.exception.BARWAHSMParsingException;
 import com.dukhan.forgot.infrastructure.common.exception.BarwaHSMCommuicationException;
 import com.dukhan.forgot.infrastructure.common.hsm.HSMEncryptorManagerImpl;
-import com.dukhan.forgot.infrastructure.common.xmlResponse.DebitCardPINVerificationReply;
-import com.dukhan.forgot.infrastructure.common.xmlResponse.EAIMessage;
-//import com.dukhan.forgot.infrastructure.mq.JmsRequestReplyService;
-//import com.dukhan.forgot.infrastructure.mq.JmsRequestReplyService;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 @Service
 @ConditionalOnProperty(name = "mock.enabled", havingValue = "false", matchIfMissing = true)
 public class CardBinValidationServiceImpl implements CardBinValidationService {
-    @Value("${hsm.mock:true}")
-    private boolean mockMode;
     private static final Logger logger = LoggerFactory.getLogger(CardBinValidationServiceImpl.class);
-    
-    private CardBinMasterRepository cardBinMasterRepository;
-    private final HSMEncryptorManagerImpl hsmEncryptor;
-    private final XmlConversionService xmlConversionService;
-  //  private JmsRequestReplyService jmsRequestReplyService;
 
-    public CardBinValidationServiceImpl(HSMEncryptorManagerImpl hsmEncryptor, CardBinMasterRepository cardBinMasterRepository, XmlConversionService xmlConversionService) {
-        this.hsmEncryptor = hsmEncryptor;
-//        this.jmsRequestReplyService = jmsRequestReplyService;
-        this.cardBinMasterRepository = cardBinMasterRepository;
-        this.xmlConversionService = xmlConversionService;
-    }
+    @Autowired
+    private CardBinMasterRepository cardBinMasterRepository;
+    @Autowired
+    private HSMEncryptorManagerImpl hsmEncryptor;
+    @Autowired
+    private XmlConversionService xmlConversionService;
+    @Autowired
+    private BankMiddlewareService bankMiddlewareService;
+
     @Override
     public GenericResponse<SimpleValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
         logger.debug("Starting CardBin validation for unit: {}, channel: {}, serviceId: {}", unit, channel, serviceId);
@@ -72,42 +64,27 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                 logger.error("HSM encryption failed for card: {}, error: {}", cardNumber, e.getMessage(), e);
                 return createValidationFailureResponse();
             }
-            String xmlRequest;
-            if (!mockMode) {
-                xmlRequest = generateXmlRequest(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, request, encryptedPin);
-                logger.info("Generated XML request for service: DCARD.PIN.VERIFICATION");
-                logger.debug("Generated XML request: {}", xmlRequest);
-                String xmlResponse;
-                xmlResponse = generateMockXmlResponse();
-                logger.debug("Using mock XML response for testing");
-                logger.debug("Mock XML response: {}", xmlResponse);
-                //--------JMS REQUEST--------------
-//          else {
-//              jmsRequestReplyService.sendRequestAndWaitForReply(
-//                       "correlationId", xmlRequest);           }
-                try {
-                    XmlMapper xmlMapper = new XmlMapper();
-                    xmlMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                    EAIMessage eaiMessage = xmlMapper.readValue(xmlResponse, EAIMessage.class);
-                    DebitCardPINVerificationReply reply = eaiMessage.getEaiBody().getEaiReply().getReply();
-                    boolean valid = reply != null && reply.getReturnStatus() != null && "0000".equals(reply.getReturnStatus().getReturnCode());
-                    String message = reply != null && reply.getReturnStatus() != null ? reply.getReturnStatus().getReturnCodeDesc() : "Unknown";
-                    if (valid) {
-                        logger.info("XML validation successful, returning success response");
-                        return GenericResponse.success(createSuccessResponse("2321"));
-                    } else {
-                        logger.warn("XML validation failed: {}", message);
-                        return createValidationFailureResponse();
-                    }
-                } catch (Exception e) {
-                    logger.error("Error parsing XML response: {}", e.getMessage(), e);
+
+            try {
+                BankMiddlewareResponse bankResponse = callBankMiddlewareAPI(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, cardNumber, encryptedPin);
+                
+                if (bankResponse != null && "SUCCESS".equals(bankResponse.getStatus())) {
+                    String customerNumber = bankResponse.getBankResponse().getCustomerNumber();
+                    String correlationId = bankResponse.getBankResponse().getCorrelationId();
+                    
+                    logger.info("Bank middleware API call successful - CustomerNumber: {}, CorrelationId: {}", customerNumber, correlationId);
+                    
+                    SimpleValidationResponse successResponse = createSuccessResponse(customerNumber, correlationId);
+                    return GenericResponse.success(successResponse);
+                } else {
+                    logger.warn("Bank middleware API call failed - Status: {}, Message: {}", 
+                            bankResponse != null ? bankResponse.getStatus() : "NULL", 
+                            bankResponse != null ? bankResponse.getMessage() : "No response");
                     return createValidationFailureResponse();
                 }
-            }
-            else{
-                // Mock mode - return success response
-                logger.info("Mock mode - returning success response");
-                return GenericResponse.success(createSuccessResponse("2321"));
+            } catch (Exception e) {
+                logger.error("Bank middleware API call failed for card: {}, error: {}", cardNumber, e.getMessage(), e);
+                return createValidationFailureResponse();
             }
 
         } catch (Exception e) {
@@ -153,47 +130,52 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
         logger.debug("No BIN match found for card number: {}", cardNumber);
         return null;
     }
-    
-    /**
-     * Generate XML request using the XML conversion service
-     */
-    private String generateXmlRequest(String unit, String channel, String lang, String serviceId, 
-                                    String screenId, String moduleId, String subModuleId, 
-                                    CardBinValidationRequest request, String encryptedPin) {
+
+    private BankMiddlewareResponse callBankMiddlewareAPI(String unit, String channel, String lang, String serviceId, 
+                                                       String screenId, String moduleId, String subModuleId, 
+                                                       String cardNumber, String encryptedPin) {
         try {
-            // Prepare headers map
-            Map<String, Object> headers = new HashMap<>();
-            headers.put("serviceName", "DCARD.PIN.VERIFICATION");
-            headers.put("serviceType", "SYNC");
-            headers.put("serviceVersion", "1");
-            headers.put("client", unit != null ? unit : "BKR");
-            headers.put("clientChannel", channel != null ? channel : "MOB");
-            headers.put("msgChannel", "MQ");
-            headers.put("requestorLanguage", lang != null ? lang : "E");
-            headers.put("returnCode", "0000");
+            BankMiddlewareRequest request = BankMiddlewareRequest.builder()
+                    .serviceName("DCARD.PIN.VERIFICATION")
+                    .parameters(Arrays.asList(
+                            BankMiddlewareRequest.Parameter.builder()
+                                    .fieldName("cardNumber")
+                                    .fieldValue(cardNumber)
+                                    .build(),
+                            BankMiddlewareRequest.Parameter.builder()
+                                    .fieldName("pin")
+                                    .fieldValue(encryptedPin)
+                                    .build()
+                    ))
+                    .build();
+
+            logger.debug("Calling bank middleware API with cardNumber: {}", cardNumber);
+            BankMiddlewareResponse response = bankMiddlewareService.callBankMiddleware(
+                    unit != null ? unit : "DEFAULT",
+                    channel != null ? channel : "WEB", 
+                    lang != null ? lang : "en",
+                    serviceId != null ? serviceId : "OTP_SERVICE",
+                    screenId != null ? screenId : "LOGIN_SCREEN",
+                    moduleId != null ? moduleId : "AUTH_MODULE",
+                    subModuleId != null ? subModuleId : "OTP_SUBMODULE",
+                    request
+            );
             
-            // Prepare payload map
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("referenceNum", "TAM" + System.currentTimeMillis() % 1000000);
-            payload.put("cardNumber", request.getCardNumber());
-            payload.put("pin", encryptedPin);
-            payload.put("requestTime", null); // Will be auto-generated
-            
-            // Generate XML using the conversion service
-            return xmlConversionService.convertDcardPinVerificationToXml(headers, payload);
+            logger.debug("Bank middleware API response: {}", response);
+            return response;
             
         } catch (Exception e) {
-            logger.error("Error generating XML request: {}", e.getMessage(), e);
-            throw new RuntimeException("Failed to generate XML request", e);
+            logger.error("Error calling bank middleware API: {}", e.getMessage(), e);
+            throw e;
         }
     }
     
     /**
      * Create success response
      */
-    private SimpleValidationResponse createSuccessResponse(String rimNumber) {
+    private SimpleValidationResponse createSuccessResponse(String customerNumber, String correlationId) {
         return SimpleValidationResponse.builder()
-                .rimNumber(rimNumber)
+                .rimNumber(customerNumber) // Using customerNumber as rimNumber
                 .userName("user123")
                 .otp(true)
                 .build();

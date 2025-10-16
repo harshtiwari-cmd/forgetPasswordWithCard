@@ -1,6 +1,9 @@
 mock:
-  enabled: true
+  enabled: false
 
+bank:
+  middleware:
+    url: http://localhost:8080
 spring:
   application:
     name: forgot-service
