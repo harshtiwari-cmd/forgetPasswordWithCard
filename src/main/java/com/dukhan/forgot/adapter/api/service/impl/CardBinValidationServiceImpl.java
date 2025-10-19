@@ -223,8 +223,8 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
         try {
             OtpGenerateRequest otpRequest = OtpGenerateRequest.builder()
                     .requestInfo(OtpGenerateRequest.RequestInfo.builder()
-                            .action("login")
-                            .rimNumber(customerNumber)
+                            .action("forget")
+                            .rimNo(customerNumber)
                             .build())
                     .deviceInfo(DeviceInfo.builder()
                             .deviceId("DEVICE123")

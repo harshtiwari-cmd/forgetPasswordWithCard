@@ -20,7 +20,7 @@ public class OtpServiceImpl implements OtpService {
     @Autowired
     private RestTemplate restTemplate;
     
-    @Value("${otp.service.url:http://34.18.65.88:9096/rb-user-management/api/v1/otp/generate}")
+    @Value("${otp.service.url:http://34.1.33.119:9097/rb-user-management/api/v1/otp/generate}")
     private String otpServiceUrl;
     
     @Override
@@ -29,7 +29,7 @@ public class OtpServiceImpl implements OtpService {
                                           OtpGenerateRequest request) {
         try {
             logger.debug("Calling OTP generation API for customerId: {}",
-                    request.getRequestInfo().getRimNumber());
+                    request.getRequestInfo().getRimNo());
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("unit", unit != null ? unit : "DEFAULT");
@@ -51,7 +51,7 @@ public class OtpServiceImpl implements OtpService {
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 OtpGenerateResponse otpResponse = response.getBody();
                 logger.info("OTP generation successful for customerId: {}, status: {}",
-                        request.getRequestInfo().getRimNumber(),
+                        request.getRequestInfo().getRimNo(),
                         otpResponse.getStatus() != null ? otpResponse.getStatus().getDescription() : "UNKNOWN");
                 return otpResponse;
             } else {

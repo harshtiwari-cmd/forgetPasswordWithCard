@@ -32,6 +32,6 @@ public class OtpGenerateRequest {
         private String action;
         
         @NotBlank(message = "RimNumber number is required")
-        private String rimNumber;
+        private String rimNo;
     }
 }
