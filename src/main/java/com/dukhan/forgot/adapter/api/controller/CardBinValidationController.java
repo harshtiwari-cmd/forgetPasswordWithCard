@@ -7,6 +7,7 @@ import com.dukhan.forgot.infrastructure.common.GenericResponse;
 import com.dukhan.forgot.domain.model.entity.CardBinMaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -19,18 +20,16 @@ import java.util.Collections;
 public class CardBinValidationController {
     
     private static final Logger logger = LoggerFactory.getLogger(CardBinValidationController.class);
-    
-    private final CardBinValidationService cardBinValidationService;
+    @Autowired
+    private  CardBinValidationService cardBinValidationService;
 
-    public CardBinValidationController(CardBinValidationService cardBinValidationService) {
-        this.cardBinValidationService = cardBinValidationService;
-    }
+
 
     @PostMapping("/validate")
     public ResponseEntity<GenericResponse<SimpleValidationResponse>> validateCardBin(
             @RequestHeader(name = AppConstant.UNIT, required = true) String unit,
             @RequestHeader(name = AppConstant.HEADER_CHANNEL, required = true) String channel,
-            @RequestHeader(name = AppConstant.HEADER_ACCEPT_LANGUAGE, required = true) String lang,
+            @RequestHeader(name = AppConstant.HEADER_ACCEPT_LANGUAGE, required = false) String lang,
             @RequestHeader(name = AppConstant.SERVICEID, required = true) String serviceId,
             @RequestHeader(name = AppConstant.SCREEN_ID, required = true) String screenId,
             @RequestHeader(name = AppConstant.MODULE_ID, required = true) String moduleId,
@@ -68,7 +67,7 @@ public class CardBinValidationController {
             @RequestHeader(name = AppConstant.SUB_MODULE_ID, required = true) String subModuleId,
             @RequestHeader(name = AppConstant.SCREEN_ID, required = true) String screenId,
             @RequestHeader(name = AppConstant.HEADER_CHANNEL, required = true) String channel,
-            @RequestHeader(name = AppConstant.HEADER_ACCEPT_LANGUAGE, required = true) String lang,
+            @RequestHeader(name = AppConstant.HEADER_ACCEPT_LANGUAGE, required = false) String lang,
             @Valid @RequestBody(required = true) CardBinAllWrapper wrapper) {
         
         if (wrapper == null) {
