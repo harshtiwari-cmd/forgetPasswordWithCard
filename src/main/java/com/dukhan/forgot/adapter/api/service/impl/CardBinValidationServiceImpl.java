@@ -19,6 +19,7 @@ import com.dukhan.forgot.infrastructure.common.exception.BARWAHSMEncryptionExcep
 import com.dukhan.forgot.infrastructure.common.exception.BARWAHSMParsingException;
 import com.dukhan.forgot.infrastructure.common.exception.BarwaHSMCommuicationException;
 import com.dukhan.forgot.infrastructure.common.hsm.HSMEncryptorManagerImpl;
+import com.dukhan.forgot.infrastructure.helper.CardBasicValidations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +44,8 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
     private BankMiddlewareService bankMiddlewareService;
     @Autowired
     private OtpService otpService;
+    @Autowired
+    private CardBasicValidations cardBasicValidations;
 
     @Override
     public GenericResponse<SimpleValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
@@ -52,7 +55,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
             String cardNumber = request.getCardNumber();
             String pin = request.getPin();
             
-            CardBinMaster matchedBin = findMatchingBin(cardNumber);
+            CardBinMaster matchedBin = cardBasicValidations.findMatchingBin(cardNumber);
 
             if (matchedBin == null) {
                 logger.warn("Card validation failed - No CardBin record found for card number: {}", cardNumber);
@@ -131,29 +134,6 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
         }
     }
 
-    private CardBinMaster findMatchingBin(String cardNumber) {
-        logger.debug("Extracting BIN from card number of length: {}", cardNumber != null ? cardNumber.length() : 0);
-
-        if (cardNumber == null) {
-            logger.warn("Card number is null, cannot extract BIN");
-            return null;
-        }
-
-        int[] binLengths = {8, 7, 6};
-        for (int len : binLengths) {
-            if (cardNumber.length() >= len) {
-                String binCandidate = cardNumber.substring(0, len);
-                List<CardBinMaster> binMasterList = cardBinMasterRepository.findByBin(binCandidate);
-                logger.debug("Searched for BIN: {}, found {} records", binCandidate, binMasterList.size());
-                if (!binMasterList.isEmpty()) {
-                    return binMasterList.get(0);
-                }
-            }
-        }
-
-        logger.debug("No BIN match found for card number: {}", cardNumber);
-        return null;
-    }
 
     private BankMiddlewareResponse callBankMiddlewareAPI(String unit, String channel, String lang, String serviceId, 
                                                        String screenId, String moduleId, String subModuleId, 
