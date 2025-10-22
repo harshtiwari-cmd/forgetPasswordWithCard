@@ -65,7 +65,17 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
 
             if (matchedBin == null) {
                 logger.warn("Card validation failed - No CardBin record found for card number: {}", cardNumber);
-                return createValidationFailureResponse();
+                return GenericResponse.error(AppConstant.ERROR_DATA_CODE, "BIN_NOT_VALID");
+            }
+
+            if (!"ACTIVE".equalsIgnoreCase(matchedBin.getStatus())) {
+                logger.warn("Card validation failed - BIN record is not ACTIVE. BIN: {}, Status: {}", matchedBin.getBin(), matchedBin.getStatus());
+                return GenericResponse.error(AppConstant.ERROR_DATA_CODE, "BIN_NOT_VALID");
+            }
+
+            if (matchedBin.getCardType() != null && !"DEBIT".equalsIgnoreCase(matchedBin.getCardType())) {
+                logger.warn("Card validation failed - Card type must be DEBIT. BIN: {}, CardType: {}", matchedBin.getBin(), matchedBin.getCardType());
+                return GenericResponse.error(AppConstant.ERROR_DATA_CODE, "CARD_NOT_VALID_MUST_USE_DEBIT");
             }
 
             logger.info("Card BIN validation successful - BIN: {}, ProductType: {}, CardType: {}, Code: {}",
@@ -77,7 +87,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                 logger.info("PIN encryption successful for card: {}", cardNumber);
             } catch (BarwaHSMCommuicationException | BARWAHSMEncryptionException | BARWAHSMParsingException e) {
                 logger.error("HSM encryption failed for card: {}, error: {}", cardNumber, e.getMessage(), e);
-                return createValidationFailureResponse();
+                return GenericResponse.error(AppConstant.ERROR_DATA_CODE, "PIN_ENCRYPTION_FAILED");
             }
 
             try {

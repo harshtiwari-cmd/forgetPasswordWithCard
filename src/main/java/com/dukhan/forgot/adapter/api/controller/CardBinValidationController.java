@@ -51,14 +51,23 @@ public class CardBinValidationController {
                 return ResponseEntity.ok(response);
             }
             
-            if (response == null || response.getStatus() == null || !AppConstant.RESULT_CODE.equals(response.getStatus().getCode())) {
+            if (response == null || response.getStatus() == null) {
+                logger.warn("Service returned null response or status");
                 return ResponseEntity.ok(GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC));
             }
-            SimpleValidationResponse data = response.getData();
-            if (data == null || (data.getRimNumber() == null && data.getUserName() == null && !data.isOtp())) {
-                return ResponseEntity.ok(GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC));
+            
+            if (AppConstant.RESULT_CODE.equals(response.getStatus().getCode())) {
+                SimpleValidationResponse data = response.getData();
+                if (data == null || (data.getRimNumber() == null && data.getUserName() == null && !data.isOtp())) {
+                    logger.warn("Success response but invalid data structure");
+                    return ResponseEntity.ok(GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC));
+                }
+                return ResponseEntity.ok(GenericResponse.success(data));
             }
-            return ResponseEntity.ok(GenericResponse.success(data));
+            
+            logger.warn("Service returned error response - Code: {}, Description: {}",
+                    response.getStatus().getCode(), response.getStatus().getDescription());
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             logger.error("Error occurred during CardBin validation and PIN encryption - Unit: {}, Channel: {}, ServiceId: {}, Error: {}",
                     unit, channel, serviceId, e.getMessage(), e);
