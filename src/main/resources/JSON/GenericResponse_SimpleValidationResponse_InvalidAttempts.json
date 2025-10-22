@@ -1,7 +1,7 @@
 {
   "data": null,
   "status": {
-    "code": "000400",
+    "code": "CARD001",
     "description": "INVALID_ATTEMPTS_LIMIT_EXCEEDED"
   }
 }

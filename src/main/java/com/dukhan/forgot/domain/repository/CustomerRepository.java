@@ -16,4 +16,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     
     @Query("SELECT c.userId FROM Customer c WHERE c.customerId = :customerId")
     Optional<String> findUsernameByCustomerId(@Param("customerId") Long customerId);
+    
+    // Method to save customer (inherited from JpaRepository, but adding for clarity)
+    // Customer save(Customer customer);
 }
