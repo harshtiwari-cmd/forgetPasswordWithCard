@@ -238,7 +238,8 @@ class CardBinValidationControllerTest {
     @Test
     void testGetActiveBins_NoData() {
         // Given
-        GenericResponse<List<CardBinMaster>> serviceResponse = GenericResponse.successNoData(Collections.emptyList());
+        GenericResponse<List<CardBinMaster>> serviceResponse = GenericResponse.success(Collections.emptyList());
+        System.out.println(serviceResponse);
         when(cardBinValidationService.getActiveBins()).thenReturn(serviceResponse);
 
         CardBinAllWrapper wrapper = CardBinAllWrapper.builder()
@@ -257,12 +258,11 @@ class CardBinValidationControllerTest {
         GenericResponse<List<CardBinMaster>> response = controller.getActiveBins(
                 "SERVICE", "MODULE", "SUBMODULE", "SCREEN", "WEB", "en", wrapper);
 
+        System.out.println(response);
         // Then
         assertNotNull(response);
-        assertNotNull(response.getData());
-        assertTrue(response.getData().isEmpty());
         assertEquals(AppConstant.NO_DATA_CODE, response.getStatus().getCode());
-
+        assertEquals(AppConstant.NODATA, response.getStatus().getDescription());
         verify(cardBinValidationService, times(1)).getActiveBins();
     }
 

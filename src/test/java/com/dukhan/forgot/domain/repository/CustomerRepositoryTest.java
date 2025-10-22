@@ -26,7 +26,7 @@ class CustomerRepositoryTest {
     void testFindByCustomerId_Success() {
         // Given
         Customer customer = Customer.builder()
-                .userNo(1L)
+//                .userNo(1L) - user name should not be set manually if it is auto-generated
                 .customerId(123456L)
                 .userId("testuser")
                 .email("test@example.com")
@@ -42,6 +42,7 @@ class CustomerRepositoryTest {
         // When
         Optional<Customer> result = customerRepository.findByCustomerId(123456L);
 
+        System.out.println(result);
         // Then
         assertTrue(result.isPresent());
         assertEquals(123456L, result.get().getCustomerId());
@@ -64,7 +65,6 @@ class CustomerRepositoryTest {
     void testFindUsernameByCustomerId_Success() {
         // Given
         Customer customer = Customer.builder()
-                .userNo(1L)
                 .customerId(123456L)
                 .userId("testuser")
                 .email("test@example.com")
@@ -98,7 +98,6 @@ class CustomerRepositoryTest {
     void testFindByCustomerId_MultipleCustomers() {
         // Given
         Customer customer1 = Customer.builder()
-                .userNo(1L)
                 .customerId(123456L)
                 .userId("user1")
                 .email("user1@example.com")
@@ -110,7 +109,6 @@ class CustomerRepositoryTest {
                 .build();
 
         Customer customer2 = Customer.builder()
-                .userNo(2L)
                 .customerId(789012L)
                 .userId("user2")
                 .email("user2@example.com")
@@ -142,7 +140,6 @@ class CustomerRepositoryTest {
     void testFindUsernameByCustomerId_MultipleCustomers() {
         // Given
         Customer customer1 = Customer.builder()
-                .userNo(1L)
                 .customerId(123456L)
                 .userId("user1")
                 .email("user1@example.com")
@@ -154,7 +151,6 @@ class CustomerRepositoryTest {
                 .build();
 
         Customer customer2 = Customer.builder()
-                .userNo(2L)
                 .customerId(789012L)
                 .userId("user2")
                 .email("user2@example.com")
@@ -238,7 +234,6 @@ class CustomerRepositoryTest {
     void testCustomerEntity_AllFields() {
         // Given
         Customer customer = Customer.builder()
-                .userNo(1L)
                 .customerId(123456L)
                 .userId("testuser")
                 .email("test@example.com")
@@ -266,7 +261,6 @@ class CustomerRepositoryTest {
         // Then
         assertTrue(result.isPresent());
         Customer foundCustomer = result.get();
-        assertEquals(1L, foundCustomer.getUserNo());
         assertEquals(123456L, foundCustomer.getCustomerId());
         assertEquals("testuser", foundCustomer.getUserId());
         assertEquals("test@example.com", foundCustomer.getEmail());

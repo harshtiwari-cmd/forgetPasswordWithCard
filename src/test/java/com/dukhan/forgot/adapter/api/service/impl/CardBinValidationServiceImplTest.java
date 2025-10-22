@@ -91,7 +91,7 @@ class CardBinValidationServiceImplTest {
     @Test
     void testValidateCardBin_Success() throws Exception {
         // Given
-        when(cardBinMasterRepository.findByBin("123456")).thenReturn(Arrays.asList(cardBinMaster));
+        when(cardBinMasterRepository.findByBin("12345678")).thenReturn(Arrays.asList(cardBinMaster));
         when(hsmEncryptor.generatePinBlockUnderZPK(anyString(), anyString(), anyString()))
                 .thenReturn("ENCRYPTED_PIN");
         when(bankMiddlewareService.callBankMiddleware(anyString(), anyString(), anyString(), anyString(),
@@ -114,7 +114,7 @@ class CardBinValidationServiceImplTest {
         assertEquals("testuser", response.getData().getUserName());
         assertTrue(response.getData().isOtp());
 
-        verify(cardBinMasterRepository, times(1)).findByBin("123456");
+        verify(cardBinMasterRepository, times(1)).findByBin("12345678");
         verify(hsmEncryptor, times(1)).generatePinBlockUnderZPK("1234", "1234567890123456", "CardBinValidation");
         verify(bankMiddlewareService, times(1)).callBankMiddleware(anyString(), anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString(), any(BankMiddlewareRequest.class));
@@ -126,7 +126,7 @@ class CardBinValidationServiceImplTest {
     @Test
     void testValidateCardBin_NoBinFound() {
         // Given
-        when(cardBinMasterRepository.findByBin("123456")).thenReturn(Collections.emptyList());
+        when(cardBinMasterRepository.findByBin("12345678")).thenReturn(Collections.emptyList());
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
@@ -137,27 +137,27 @@ class CardBinValidationServiceImplTest {
         assertEquals(AppConstant.GEN_ERROR_CODE, response.getStatus().getCode());
         assertEquals(AppConstant.GEN_ERROR_DESC, response.getStatus().getDescription());
 
-        verify(cardBinMasterRepository, times(1)).findByBin("123456");
+        verify(cardBinMasterRepository, times(1)).findByBin("12345678");
         verify(hsmEncryptor, never()).generatePinBlockUnderZPK(anyString(), anyString(), anyString());
     }
 
     @Test
     void testValidateCardBin_HSMEncryptionFailure() throws Exception {
         // Given
-        when(cardBinMasterRepository.findByBin("123456")).thenReturn(Arrays.asList(cardBinMaster));
+        when(cardBinMasterRepository.findByBin("12345678")).thenReturn(Arrays.asList(cardBinMaster));
         when(hsmEncryptor.generatePinBlockUnderZPK(anyString(), anyString(), anyString()))
                 .thenThrow(new BARWAHSMEncryptionException("HSM001", "HSM encryption failed"));
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
                 "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
-
+        System.out.println(response);
         // Then
         assertNotNull(response);
         assertEquals(AppConstant.GEN_ERROR_CODE, response.getStatus().getCode());
         assertEquals(AppConstant.GEN_ERROR_DESC, response.getStatus().getDescription());
 
-        verify(cardBinMasterRepository, times(1)).findByBin("123456");
+        verify(cardBinMasterRepository, times(1)).findByBin("12345678");
         verify(hsmEncryptor, times(1)).generatePinBlockUnderZPK("1234", "1234567890123456", "CardBinValidation");
         verify(bankMiddlewareService, never()).callBankMiddleware(anyString(), anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString(), any(BankMiddlewareRequest.class));
@@ -166,7 +166,7 @@ class CardBinValidationServiceImplTest {
     @Test
     void testValidateCardBin_BankMiddlewareFailure() throws Exception {
         // Given
-        when(cardBinMasterRepository.findByBin("123456")).thenReturn(Arrays.asList(cardBinMaster));
+        when(cardBinMasterRepository.findByBin("12345678")).thenReturn(Arrays.asList(cardBinMaster));
         when(hsmEncryptor.generatePinBlockUnderZPK(anyString(), anyString(), anyString()))
                 .thenReturn("ENCRYPTED_PIN");
         when(bankMiddlewareService.callBankMiddleware(anyString(), anyString(), anyString(), anyString(),
@@ -182,7 +182,7 @@ class CardBinValidationServiceImplTest {
         assertEquals(AppConstant.GEN_ERROR_CODE, response.getStatus().getCode());
         assertEquals(AppConstant.GEN_ERROR_DESC, response.getStatus().getDescription());
 
-        verify(cardBinMasterRepository, times(1)).findByBin("123456");
+        verify(cardBinMasterRepository, times(1)).findByBin("12345678");
         verify(hsmEncryptor, times(1)).generatePinBlockUnderZPK("1234", "1234567890123456", "CardBinValidation");
         verify(bankMiddlewareService, times(1)).callBankMiddleware(anyString(), anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString(), any(BankMiddlewareRequest.class));
@@ -191,7 +191,7 @@ class CardBinValidationServiceImplTest {
     @Test
     void testValidateCardBin_CustomerNotFound() throws Exception {
         // Given
-        when(cardBinMasterRepository.findByBin("123456")).thenReturn(Arrays.asList(cardBinMaster));
+        when(cardBinMasterRepository.findByBin("12345678")).thenReturn(Arrays.asList(cardBinMaster));
         when(hsmEncryptor.generatePinBlockUnderZPK(anyString(), anyString(), anyString()))
                 .thenReturn("ENCRYPTED_PIN");
         when(bankMiddlewareService.callBankMiddleware(anyString(), anyString(), anyString(), anyString(),
@@ -216,7 +216,7 @@ class CardBinValidationServiceImplTest {
     @Test
     void testValidateCardBin_InvalidCustomerNumber() throws Exception {
         // Given
-        when(cardBinMasterRepository.findByBin("123456")).thenReturn(Arrays.asList(cardBinMaster));
+        when(cardBinMasterRepository.findByBin("12345678")).thenReturn(Arrays.asList(cardBinMaster));
         when(hsmEncryptor.generatePinBlockUnderZPK(anyString(), anyString(), anyString()))
                 .thenReturn("ENCRYPTED_PIN");
         when(bankMiddlewareService.callBankMiddleware(anyString(), anyString(), anyString(), anyString(),
@@ -242,7 +242,7 @@ class CardBinValidationServiceImplTest {
     @Test
     void testValidateCardBin_OTPGenerationFailure() throws Exception {
         // Given
-        when(cardBinMasterRepository.findByBin("123456")).thenReturn(Arrays.asList(cardBinMaster));
+        when(cardBinMasterRepository.findByBin("12345678")).thenReturn(Arrays.asList(cardBinMaster));
         when(hsmEncryptor.generatePinBlockUnderZPK(anyString(), anyString(), anyString()))
                 .thenReturn("ENCRYPTED_PIN");
         when(bankMiddlewareService.callBankMiddleware(anyString(), anyString(), anyString(), anyString(),
@@ -274,7 +274,7 @@ class CardBinValidationServiceImplTest {
     @Test
     void testValidateCardBin_Exception() throws Exception {
         // Given
-        when(cardBinMasterRepository.findByBin("123456")).thenThrow(new RuntimeException("Database error"));
+        when(cardBinMasterRepository.findByBin("12345678")).thenThrow(new RuntimeException("Database error"));
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
@@ -285,7 +285,7 @@ class CardBinValidationServiceImplTest {
         assertEquals(AppConstant.GEN_ERROR_CODE, response.getStatus().getCode());
         assertEquals(AppConstant.GEN_ERROR_DESC, response.getStatus().getDescription());
 
-        verify(cardBinMasterRepository, times(1)).findByBin("123456");
+        verify(cardBinMasterRepository, times(1)).findByBin("12345678");
     }
 
     @Test

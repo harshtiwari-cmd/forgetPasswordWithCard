@@ -38,7 +38,7 @@ class OtpServiceImplTest {
         request = OtpGenerateRequest.builder()
                 .requestInfo(OtpGenerateRequest.RequestInfo.builder()
                         .action("login")
-                        .rimNumber("+97433333335")
+                        .rimNo("+97433333335")
                         .build())
                 .deviceInfo(DeviceInfo.builder()
                         .deviceId("DEVICE123")
