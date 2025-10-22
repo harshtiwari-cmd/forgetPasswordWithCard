@@ -1,94 +1,101 @@
 package com.dukhan.forgot.domain.model.entity;
 
-import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "rbx_t_user_details")
+@Table(name = "rbx_t_user_auth")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Customer {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "user_no")
-    private Long userNo;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "auth_id")
+	private Long authId;
 
-    @Column(name = "address", columnDefinition = "text")
-    private String address;
+	@Column(name = "auth_type", length = 30)
+	private String authType;
 
-    @Size(max = 100)
-    @Column(name = "city", length = 100)
-    private String city;
+	@Column(name = "channel_id", length = 50)
+	private String channelId;
 
-    @Size(max = 100)
-    @Column(name = "country", length = 100)
-    private String country;
+	@Column(name = "created_at", nullable = false)
+	private LocalDateTime createdAt;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+	@Column(name = "created_by", length = 100)
+	private String createdBy;
 
-    @Column(name = "customer_id")
-    private Long customerId;
+	@Column(name = "customer_id")
+	private Long customerId;
 
-    @Column(name = "date_of_birth")
-    private LocalDate dateOfBirth;
+	@Column(name = "date_migrated")
+	private LocalDateTime dateMigrated;
 
-    @Size(max = 64)
-    @Column(name = "domain_id", length = 64)
-    private String domainId;
+	@Column(name = "failed_login_attempts")
+	private Integer failedLoginAttempts;
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Email should be valid")
-    @Size(max = 150)
-    @Column(name = "email", length = 150, nullable = false, unique = true)
-    private String email;
+	@Column(name = "force_pwd_change", length = 1)
+	private String forcePwdChange;
 
-    @Size(max = 60)
-    @Column(name = "first_name", length = 60)
-    private String firstName;
+	@Column(name = "force_user_change", length = 1)
+	private String forceUserChange;
 
-    @Size(max = 60)
-    @Column(name = "last_name", length = 60)
-    private String lastName;
+	@Column(name = "last_login_at")
+	private LocalDateTime lastLoginAt;
 
-    @Size(max = 60)
-    @Column(name = "middle_name", length = 60)
-    private String middleName;
+	@Column(name = "last_login_channel", length = 50)
+	private String lastLoginChannel;
 
-    @Size(max = 20)
-    @Column(name = "phone_no", length = 20)
-    private String phoneNo;
+	@Column(name = "last_login_ip", length = 100)
+	private String lastLoginIp;
 
-    @Size(max = 20)
-    @Column(name = "postal_code", length = 20)
-    private String postalCode;
+	@Column(name = "last_unsuccessful_login")
+	private LocalDateTime lastUnsuccessfulLogin;
 
-    @Size(max = 500)
-    @Column(name = "profile_picture_url", length = 500)
-    private String profilePictureUrl;
+	@Column(name = "password_changed_at", nullable = false)
+	private LocalDateTime passwordChangedAt;
 
-    @Size(max = 100)
-    @Column(name = "state", length = 100)
-    private String state;
+	@Column(name = "password_hash", length = 255, nullable = false)
+	private String passwordHash;
 
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+	@Lob
+	@Column(name = "pwd_cipher_base64")
+	private byte[] pwdCipherBase64;
 
-    @NotBlank(message = "User ID is required")
-    @Size(max = 50)
-    @Column(name = "user_id", length = 50, nullable = false, unique = true)
-    private String userId;
+	@Lob
+	@Column(name = "pwd_enc_key_base64")
+	private byte[] pwdEncKeyBase64;
+
+	@Column(name = "pwd_iv_base64", length = 64)
+	private String pwdIvBase64;
+
+	@Column(name = "server_salt", length = 64, nullable = false)
+	private String serverSalt;
+
+	@Column(name = "status", length = 20)
+	private String status;
+
+	@Column(name = "updated_at", nullable = false)
+	private LocalDateTime updatedAt;
+
+	@Column(name = "user_id", length = 50, nullable = false, unique = true)
+	private String userId;
+
+	@Column(name = "user_type", length = 30)
+	private String userType;
+
+	@Column(name = "user_no", nullable = false)
+	private Long userNo;
+
+	@Column(name = "updated_by", length = 50)
+	private String updatedBy;
 }

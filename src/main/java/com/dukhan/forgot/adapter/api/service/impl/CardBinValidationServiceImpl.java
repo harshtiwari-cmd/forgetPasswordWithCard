@@ -19,13 +19,17 @@ import com.dukhan.forgot.infrastructure.common.exception.BARWAHSMEncryptionExcep
 import com.dukhan.forgot.infrastructure.common.exception.BARWAHSMParsingException;
 import com.dukhan.forgot.infrastructure.common.exception.BarwaHSMCommuicationException;
 import com.dukhan.forgot.infrastructure.common.hsm.HSMEncryptorManagerImpl;
+import com.dukhan.forgot.infrastructure.common.exception.UserBlockedException;
+import com.dukhan.forgot.infrastructure.common.exception.RetryAfter24HoursException;
 import com.dukhan.forgot.infrastructure.helper.CardBasicValidations;
+import org.springframework.data.auditing.DateTimeProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -46,6 +50,8 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
     private OtpService otpService;
     @Autowired
     private CardBasicValidations cardBasicValidations;
+    @Autowired
+    private DateTimeProvider dateTimeProvider;
 
     @Override
     public GenericResponse<SimpleValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
@@ -82,7 +88,16 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                     
                     logger.info("Bank middleware API call successful - CustomerNumber: {}, CorrelationId: {}", customerNumber, correlationId);
                     
-                    String username = getCustomerUsername(customerNumber);
+                    String username;
+                    try {
+                        username = getCustomerUsername(customerNumber);
+                    } catch (UserBlockedException ex) {
+                        logger.warn("User is blocked for customerNumber: {}", customerNumber);
+                        return GenericResponse.error(AppConstant.ERROR_DATA_CODE, "USER_BLOCKED_CONTACT_BANK");
+                    } catch (RetryAfter24HoursException ex) {
+                        logger.warn("User must retry after 24 hours for customerNumber: {}", customerNumber);
+                        return GenericResponse.error(AppConstant.ERROR_DATA_CODE, "RETRY_AFTER_24_HOURS");
+                    }
                     if (username == null) {
                         logger.warn("Customer not found in database for customerNumber: {}", customerNumber);
                         return createValidationFailureResponse();
@@ -187,7 +202,32 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
         try {
             logger.debug("Looking up customer username for customerNumber: {}", customerNumber);
             Long customerId = Long.parseLong(customerNumber);
-            return customerRepository.findUsernameByCustomerId(customerId).orElse(null);
+            return customerRepository.findByCustomerId(customerId)
+                    .map(customer -> {
+                        String status = customer.getStatus();
+                        if (status != null && (
+                                "LOCKED".equalsIgnoreCase(status) ||
+                                "BLOCKED".equalsIgnoreCase(status) ||
+                                "INACTIVE".equalsIgnoreCase(status))) {
+                            throw new UserBlockedException("User is blocked");
+                        }
+                        if (customer.getUpdatedAt() != null) {
+                            LocalDateTime updatedAt = customer.getUpdatedAt();
+                            LocalDateTime now = dateTimeProvider.getNow()
+                                    .map(temporal -> {
+                                        try {
+                                            return LocalDateTime.from(temporal);
+                                        } catch (Exception ex) {
+                                            return LocalDateTime.ofInstant(java.time.Instant.from(temporal), java.time.ZoneId.systemDefault());
+                                        }
+                                    })
+                                    .orElseGet(LocalDateTime::now);
+                            if (updatedAt.isAfter(now.minusHours(24))) {
+                                throw new RetryAfter24HoursException("Retry after 24 hours");
+                            }
+                        }
+                        return customer.getUserId();
+                    }).orElse(null);
         } catch (NumberFormatException e) {
             logger.error("Invalid customerNumber format: {}, must be a valid number", customerNumber);
             return null;
