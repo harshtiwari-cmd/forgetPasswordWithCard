@@ -12,9 +12,11 @@ import com.dukhan.forgot.domain.model.dto.OtpGenerateResponse;
 import com.dukhan.forgot.domain.model.dto.SimpleValidationResponse;
 import com.dukhan.forgot.domain.model.entity.CardBinMaster;
 import com.dukhan.forgot.domain.model.entity.CardValidation;
+import com.dukhan.forgot.domain.model.entity.OtpDetails;
 import com.dukhan.forgot.domain.repository.CardBinMasterRepository;
 import com.dukhan.forgot.domain.repository.CustomerRepository;
 import com.dukhan.forgot.domain.repository.CardValidationRepository;
+import com.dukhan.forgot.domain.repository.OtpDetailsRepository;
 import com.dukhan.forgot.infrastructure.common.AppConstant;
 import com.dukhan.forgot.infrastructure.common.GenericResponse;
 import com.dukhan.forgot.infrastructure.common.exception.BARWAHSMEncryptionException;
@@ -56,6 +58,8 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
     private DateTimeProvider dateTimeProvider;
     @Autowired
     private CardValidationRepository cardValidationRepository;
+    @Autowired
+    private OtpDetailsRepository otpDetailsRepository;
 
     @Override
     public GenericResponse<SimpleValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
@@ -125,12 +129,19 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                         logger.warn("Customer not found in database for customerNumber: {}", customerNumber);
                         return GenericResponse.error(AppConstant.USER_NOT_FOUND_CODE, "USER_NOT_EXIST");
                     }
+                    
+                    if (isOtpBlocked(username)) {
+                        logger.warn("User is blocked due to OTP limit exceeded - Username: {}", username);
+                        return GenericResponse.error(AppConstant.OTP_LIMIT, "USER_BLOCKED_OTP_LIMIT_EXCEEDED");
+                    }
+                    
                     OtpGenerateResponse otpResponse = callOtpGenerationAPI(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, customerNumber);
                     if (otpResponse != null && otpResponse.getStatus() != null &&
                         AppConstant.RESULT_CODE.equals(otpResponse.getStatus().getCode()) &&
                       AppConstant.SUCCESS.equals(otpResponse.getStatus().getDescription())) {
                         logger.info("OTP generation successful for customer: {}", customerNumber);
                         resetFailedAttempts(cardNumber);
+                        incrementOtpAttempts(username);
                         SimpleValidationResponse successResponse = createSuccessResponseWithUsername(customerNumber, username);
                         return GenericResponse.success(successResponse);
                     } else {
@@ -273,6 +284,17 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
             return false;
         }
     }
+    
+
+    private boolean isOtpBlocked(String username) {
+        try {
+            List<OtpDetails> blockedOtps = otpDetailsRepository.findBlockedOtpByUserId(username, OtpDetails.MAX_OTP_ATTEMPTS);
+            return !blockedOtps.isEmpty();
+        } catch (Exception e) {
+            logger.error("Error checking OTP attempts for username: {}, error: {}", username, e.getMessage(), e);
+            return false;
+        }
+    }
 
     private boolean handleFailedAttempt(String cardNumber) {
         try {
@@ -312,6 +334,23 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                     });
         } catch (Exception e) {
             logger.error("Error resetting failed attempts for cardNumber: {}, error: {}", cardNumber, e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Increments OTP attempts for successful OTP generation
+     * @param username The username
+     */
+    private void incrementOtpAttempts(String username) {
+        try {
+            List<OtpDetails> activeOtps = otpDetailsRepository.findActiveOtpByUserId(username);
+            for (OtpDetails otp : activeOtps) {
+                otp.incrementOtpAttempts();
+                otpDetailsRepository.save(otp);
+                logger.info("OTP attempts incremented for username: {}, attempts: {}", username, otp.getNoOfAttempts());
+            }
+        } catch (Exception e) {
+            logger.error("Error incrementing OTP attempts for username: {}, error: {}", username, e.getMessage(), e);
         }
     }
 

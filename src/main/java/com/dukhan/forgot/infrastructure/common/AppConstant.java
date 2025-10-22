@@ -60,6 +60,7 @@ public class AppConstant {
 	public static final String ERROR_DATA_CODE = "000400";
 	public static final String RETRY_DATA_CODE = "CARD002";
 	public static final String USER_NOT_FOUND_CODE = "CARD003";
+	public static final String OTP_LIMIT= "OTP00";
 	public static final String INVALID_ATTAMPTS_CODE = "CARD001";
 
 	public static final String MWRESULT_CODE = "0";
