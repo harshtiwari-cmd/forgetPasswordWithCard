@@ -32,18 +32,47 @@ public class MockCardBinValidationServiceImpl implements CardBinValidationServic
     public GenericResponse<SimpleValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
         logger.info("Mock CardBinValidationService.validateCardBin called with unit: {}, channel: {}, serviceId: {}", unit, channel, serviceId);
         
+        String cardNumber = request.getCardNumber();
+        String mockResponseFile = getMockResponseFile(cardNumber);
+        
         try {
-            ClassPathResource resource = new ClassPathResource("JSON/GenericResponse_SimpleValidationResponse.json");
+            ClassPathResource resource = new ClassPathResource(mockResponseFile);
             GenericResponse<SimpleValidationResponse> mockResponse = objectMapper.readValue(
                 resource.getInputStream(), 
                 new TypeReference<GenericResponse<SimpleValidationResponse>>() {}
             );
             
-            logger.info("Mock response loaded successfully for validateCardBin");
+            logger.info("Mock response loaded successfully for validateCardBin with card: {}", cardNumber);
             return mockResponse;
         } catch (IOException e) {
             logger.error("Error loading mock response for validateCardBin: {}", e.getMessage(), e);
             return GenericResponse.error("MOCK_ERROR", "Failed to load mock response");
+        }
+    }
+    
+
+    private String getMockResponseFile(String cardNumber) {
+        if (cardNumber == null) {
+            return "JSON/GenericResponse_SimpleValidationResponse.json";
+        }
+        
+        switch (cardNumber) {
+            case "4203741234567889":
+                return "JSON/GenericResponse_SimpleValidationResponse_Positive.json";
+            case "3209741234567889":
+                return "JSON/GenericResponse_SimpleValidationResponse_BinNotValid.json";
+            case "1003741234567889":
+                return "JSON/GenericResponse_SimpleValidationResponse_CardNotValid.json";
+            case "9003901234567889":
+                return "JSON/GenericResponse_SimpleValidationResponse_UserBlocked.json";
+            case "9898741234567889":
+                return "JSON/GenericResponse_SimpleValidationResponse_OtpLimitExceeded.json";
+            case "8080741234567889":
+                return "JSON/GenericResponse_SimpleValidationResponse_InvalidAttempts.json";
+            case "6060741234567889":
+                return "JSON/GenericResponse_SimpleValidationResponse_RetryAfter24Hours.json";
+            default:
+                return "JSON/GenericResponse_SimpleValidationResponse_Positive.json";
         }
     }
 

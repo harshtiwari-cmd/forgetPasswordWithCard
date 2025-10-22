@@ -1,0 +1,7 @@
+{
+  "data": null,
+  "status": {
+    "code": "100005",
+    "description": "INVALID_ATTEMPTS_LIMIT_EXCEEDED"
+  }
+}
