@@ -1,5 +1,6 @@
 package com.dukhan.forgot.adapter.api.service.impl;
 
+import ch.qos.logback.core.joran.action.AppenderAction;
 import com.dukhan.forgot.adapter.api.service.BankMiddlewareService;
 import com.dukhan.forgot.adapter.api.service.CardBinValidationService;
 import com.dukhan.forgot.adapter.api.service.OtpService;
@@ -89,8 +90,8 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                     }
                     OtpGenerateResponse otpResponse = callOtpGenerationAPI(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, customerNumber);
                     if (otpResponse != null && otpResponse.getStatus() != null &&
-                        "000000".equals(otpResponse.getStatus().getCode()) && 
-                        "SUCCESS".equals(otpResponse.getStatus().getDescription())) {
+                        AppConstant.RESULT_CODE.equals(otpResponse.getStatus().getCode()) &&
+                      AppConstant.SUCCESS.equals(otpResponse.getStatus().getDescription())) {
                         logger.info("OTP generation successful for customer: {}", customerNumber);
                         
                         SimpleValidationResponse successResponse = createSuccessResponseWithUsername(customerNumber, username);
