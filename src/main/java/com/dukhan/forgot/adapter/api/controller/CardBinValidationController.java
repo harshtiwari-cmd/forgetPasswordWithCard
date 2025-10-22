@@ -8,6 +8,7 @@ import com.dukhan.forgot.domain.model.entity.CardBinMaster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -23,7 +24,8 @@ public class CardBinValidationController {
     @Autowired
     private  CardBinValidationService cardBinValidationService;
 
-
+    @Value("${mock.enabled}")
+    private boolean isTrue;
 
     @PostMapping("/validate")
     public ResponseEntity<GenericResponse<SimpleValidationResponse>> validateCardBin(
@@ -44,6 +46,10 @@ public class CardBinValidationController {
         try {
             GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
                     unit, channel, lang, serviceId, screenId, moduleId, subModuleId, request);
+
+            if (isTrue) {
+                return ResponseEntity.ok(response);
+            }
             
             if (response == null || response.getStatus() == null || !AppConstant.RESULT_CODE.equals(response.getStatus().getCode())) {
                 return ResponseEntity.ok(GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC));

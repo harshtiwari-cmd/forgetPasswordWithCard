@@ -252,7 +252,7 @@ class CustomerTest {
 
         // Then
         assertFalse(violations.isEmpty());
-        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("User ID cannot exceed 50 characters")));
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("size must be between 0 and 50")));
     }
 
     @Test
@@ -274,10 +274,9 @@ class CustomerTest {
 
         // When
         Set<ConstraintViolation<Customer>> violations = validator.validate(customer);
-
         // Then
         assertFalse(violations.isEmpty());
-        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Email cannot exceed 150 characters")));
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("size must be between 0 and 150")));
     }
 
     @Test

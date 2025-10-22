@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
@@ -21,12 +22,9 @@ import java.util.List;
 public class MockCardBinValidationServiceImpl implements CardBinValidationService {
 
     private static final Logger logger = LoggerFactory.getLogger(MockCardBinValidationServiceImpl.class);
-    
-    private final ObjectMapper objectMapper;
 
-    public MockCardBinValidationServiceImpl() {
-        this.objectMapper = new ObjectMapper();
-    }
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Override
     public GenericResponse<SimpleValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
@@ -49,7 +47,6 @@ public class MockCardBinValidationServiceImpl implements CardBinValidationServic
             return GenericResponse.error("MOCK_ERROR", "Failed to load mock response");
         }
     }
-    
 
     private String getMockResponseFile(String cardNumber) {
         if (cardNumber == null) {

@@ -67,7 +67,7 @@ public class AppConstant {
 
 	public static final String GEN_ERROR_CODE = "000001";
 
-	public static final String GEN_ERROR_DESC = "Unable to process your request,Please contact Customer Care for futher assistance or try again later";
+	public static final String GEN_ERROR_DESC = "Unable to process your request,Please contact Customer Care for further assistance or try again later";
 
 	public static final String CARD_LENGTH_ERROR_CODE = "000400";
 

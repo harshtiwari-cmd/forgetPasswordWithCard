@@ -1,7 +1,7 @@
 {
   "data": null,
   "status": {
-    "code": "100003",
+    "code": "000400",
     "description": "USER_BLOCKED_CONTACT_BANK"
   }
 }
