@@ -1,6 +1,5 @@
 package com.dukhan.forgot.adapter.api.service.impl;
 
-import ch.qos.logback.core.joran.action.AppenderAction;
 import com.dukhan.forgot.adapter.api.service.BankMiddlewareService;
 import com.dukhan.forgot.adapter.api.service.CardBinValidationService;
 import com.dukhan.forgot.adapter.api.service.OtpService;
