@@ -10,10 +10,10 @@ import java.util.List;
 
 @Repository
 public interface OtpDetailsRepository extends JpaRepository<OtpDetails, String> {
-    
-    @Query("SELECT o FROM OtpDetails o WHERE o.userId = :userId AND o.otpStatus = 'ACTIVE' ORDER BY o.createdTime DESC")
-    List<OtpDetails> findActiveOtpByUserId(@Param("userId") String userId);
-    
-    @Query("SELECT o FROM OtpDetails o WHERE o.userId = :userId AND o.otpStatus = 'ACTIVE' AND o.noOfAttempts >= :maxAttempts")
-    List<OtpDetails> findBlockedOtpByUserId(@Param("userId") String userId, @Param("maxAttempts") Integer maxAttempts);
+
+    @Query("SELECT o FROM OtpDetails o WHERE o.rimNo = :userId AND o.status = 'ACTIVE' ORDER BY o.createdTime DESC")
+    List<OtpDetails> findActiveOtpByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT o FROM OtpDetails o WHERE o.rimNo = :userId AND o.status = 'ACTIVE' AND o.noOfAttempts >= :maxAttempts")
+    List<OtpDetails> findBlockedOtpByUserId(@Param("userId") Long userId, @Param("maxAttempts") Integer maxAttempts);
 }

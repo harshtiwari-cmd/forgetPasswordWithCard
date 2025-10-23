@@ -130,7 +130,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                         return GenericResponse.error(AppConstant.USER_NOT_FOUND_CODE, "USER_NOT_EXIST");
                     }
                     
-                    if (isOtpBlocked(username)) {
+                    if (isOtpBlocked(customerNumber)) {
                         logger.warn("User is blocked due to OTP limit exceeded - Username: {}", username);
                         return GenericResponse.error(AppConstant.OTP_LIMIT, "USER_BLOCKED_OTP_LIMIT_EXCEEDED");
                     }
@@ -141,7 +141,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                       AppConstant.SUCCESS.equals(otpResponse.getStatus().getDescription())) {
                         logger.info("OTP generation successful for customer: {}", customerNumber);
                         resetFailedAttempts(cardNumber);
-                        incrementOtpAttempts(username);
+                        incrementOtpAttempts(customerNumber);
                         SimpleValidationResponse successResponse = createSuccessResponseWithUsername(customerNumber, username);
                         return GenericResponse.success(successResponse);
                     } else {
@@ -288,7 +288,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
 
     private boolean isOtpBlocked(String username) {
         try {
-            List<OtpDetails> blockedOtps = otpDetailsRepository.findBlockedOtpByUserId(username, OtpDetails.MAX_OTP_ATTEMPTS);
+            List<OtpDetails> blockedOtps = otpDetailsRepository.findBlockedOtpByUserId(Long.valueOf(username), OtpDetails.MAX_OTP_ATTEMPTS);
             return !blockedOtps.isEmpty();
         } catch (Exception e) {
             logger.error("Error checking OTP attempts for username: {}, error: {}", username, e.getMessage(), e);
@@ -343,7 +343,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
      */
     private void incrementOtpAttempts(String username) {
         try {
-            List<OtpDetails> activeOtps = otpDetailsRepository.findActiveOtpByUserId(username);
+            List<OtpDetails> activeOtps = otpDetailsRepository.findActiveOtpByUserId(Long.valueOf(username));
             for (OtpDetails otp : activeOtps) {
                 otp.incrementOtpAttempts();
                 otpDetailsRepository.save(otp);
