@@ -1,40 +1,42 @@
-//package com.dukhan.forgot.domain.repository;
-//
-//import com.dukhan.forgot.domain.model.entity.Customer;
-//import org.junit.jupiter.api.Test;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-//import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
-//import org.springframework.test.context.ActiveProfiles;
-//
-//import java.time.LocalDateTime;
-//import java.util.Optional;
-//
-//import static org.junit.jupiter.api.Assertions.*;
-//
-//@DataJpaTest
-//@ActiveProfiles("test")
-//class CustomerRepositoryTest {
-//
-//    @Autowired
-//    private TestEntityManager entityManager;
-//
-//    @Autowired
-//    private CustomerRepository customerRepository;
-//
+package com.dukhan.forgot.domain.repository;
+
+import com.dukhan.forgot.domain.model.entity.Customer;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@DataJpaTest
+@ActiveProfiles("test")
+class CustomerRepositoryTest {
+
+    @Autowired
+    private TestEntityManager entityManager;
+
+    @Autowired
+    private CustomerRepository customerRepository;
+
 //    @Test
 //    void testFindByCustomerId_Success() {
 //        // Given
 //        Customer customer = Customer.builder()
-////                .userNo(1L) - user name should not be set manually if it is auto-generated
-//                .customerId(123456L)
-//                .userId("testuser")
-//                .email("test@example.com")
-//                .firstName("John")
-//                .lastName("Doe")
-//                .phoneNo("+97433333335")
+//                .authType("PASSWORD")
+//                .channelId("WEB")
 //                .createdAt(LocalDateTime.now())
+//                .createdBy("TEST")
+//                .customerId(123456L)
+//                .passwordChangedAt(LocalDateTime.now())
+//                .passwordHash("hashed_pwd")
+//                .serverSalt("salt123")
 //                .updatedAt(LocalDateTime.now())
+//                .userId("test_user")
+//                .userNo(1L)
 //                .build();
 //
 //        entityManager.persistAndFlush(customer);
@@ -46,10 +48,8 @@
 //        // Then
 //        assertTrue(result.isPresent());
 //        assertEquals(123456L, result.get().getCustomerId());
-//        assertEquals("testuser", result.get().getUserId());
-//        assertEquals("test@example.com", result.get().getEmail());
-//        assertEquals("John", result.get().getFirstName());
-//        assertEquals("Doe", result.get().getLastName());
+//        assertEquals("PASSWORD", result.get().getAuthType());
+//
 //    }
 //
 //    @Test
@@ -279,4 +279,4 @@
 //        assertNotNull(foundCustomer.getCreatedAt());
 //        assertNotNull(foundCustomer.getUpdatedAt());
 //    }
-//}
+}

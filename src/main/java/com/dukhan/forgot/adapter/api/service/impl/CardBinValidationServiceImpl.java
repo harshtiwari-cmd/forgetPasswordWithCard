@@ -36,6 +36,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @ConditionalOnProperty(name = "mock.enabled", havingValue = "false", matchIfMissing = true)
@@ -68,12 +69,12 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
         try {
             String cardNumber = request.getCardNumber();
             String pin = request.getPin();
-            
+
             if (isCardBlocked(cardNumber)) {
                 logger.warn("Card is blocked due to maximum failed attempts - CardNumber: {}", cardNumber);
                 return GenericResponse.error(AppConstant.INVALID_ATTAMPTS_CODE, "INVALID_ATTEMPTS_LIMIT_EXCEEDED");
             }
-            
+
             CardBinMaster matchedBin = cardBasicValidations.findMatchingBin(cardNumber);
 
             if (matchedBin == null) {
@@ -112,9 +113,9 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                 if (bankResponse != null && "SUCCESS".equals(bankResponse.getStatus())) {
                     String customerNumber = bankResponse.getBankResponse().getCustomerNumber();
                     String correlationId = bankResponse.getBankResponse().getCorrelationId();
-                    
+
                     logger.info("Bank middleware API call successful - CustomerNumber: {}, CorrelationId: {}", customerNumber, correlationId);
-                    
+
                     String username;
                     try {
                         username = getCustomerUsername(customerNumber);
@@ -129,12 +130,12 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                         logger.warn("Customer not found in database for customerNumber: {}", customerNumber);
                         return GenericResponse.error(AppConstant.USER_NOT_FOUND_CODE, "USER_NOT_EXIST");
                     }
-                    
+
                     if (isOtpBlocked(customerNumber)) {
                         logger.warn("User is blocked due to OTP limit exceeded - Username: {}", username);
                         return GenericResponse.error(AppConstant.OTP_LIMIT, "USER_BLOCKED_OTP_LIMIT_EXCEEDED");
                     }
-                    
+
                     OtpGenerateResponse otpResponse = callOtpGenerationAPI(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, customerNumber);
                     if (otpResponse != null && otpResponse.getStatus() != null &&
                         AppConstant.RESULT_CODE.equals(otpResponse.getStatus().getCode()) &&
@@ -145,16 +146,16 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                         SimpleValidationResponse successResponse = createSuccessResponseWithUsername(customerNumber, username);
                         return GenericResponse.success(successResponse);
                     } else {
-                        logger.warn("OTP generation failed - Status: {}, Message: {}", 
-                                otpResponse != null && otpResponse.getStatus() != null ? 
-                                    otpResponse.getStatus().getDescription() : "NULL", 
-                                otpResponse != null && otpResponse.getData() != null ? 
+                        logger.warn("OTP generation failed - Status: {}, Message: {}",
+                                otpResponse != null && otpResponse.getStatus() != null ?
+                                    otpResponse.getStatus().getDescription() : "NULL",
+                                otpResponse != null && otpResponse.getData() != null ?
                                     otpResponse.getData().getMessage() : "No response");
                         return createValidationFailureResponse();
                     }
                 } else {
-                    logger.warn("Bank middleware API call failed - Status: {}, Message: {}", 
-                            bankResponse != null ? bankResponse.getStatus() : "NULL", 
+                    logger.warn("Bank middleware API call failed - Status: {}, Message: {}",
+                            bankResponse != null ? bankResponse.getStatus() : "NULL",
                             bankResponse != null ? bankResponse.getMessage() : "No response");
                     handleFailedAttempt(cardNumber);
                     return createValidationFailureResponse();
@@ -186,8 +187,8 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
     }
 
 
-    private BankMiddlewareResponse callBankMiddlewareAPI(String unit, String channel, String lang, String serviceId, 
-                                                       String screenId, String moduleId, String subModuleId, 
+    private BankMiddlewareResponse callBankMiddlewareAPI(String unit, String channel, String lang, String serviceId,
+                                                       String screenId, String moduleId, String subModuleId,
                                                        String cardNumber, String encryptedPin) {
         try {
             BankMiddlewareRequest request = BankMiddlewareRequest.builder()
@@ -207,7 +208,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
             logger.debug("Calling bank middleware API with cardNumber: {}", cardNumber);
             BankMiddlewareResponse response = bankMiddlewareService.callBankMiddleware(
                     unit != null ? unit : "DEFAULT",
-                    channel != null ? channel : "WEB", 
+                    channel != null ? channel : "WEB",
                     lang != null ? lang : "en",
                     serviceId != null ? serviceId : "OTP_SERVICE",
                     screenId != null ? screenId : "LOGIN_SCREEN",
@@ -215,16 +216,16 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                     subModuleId != null ? subModuleId : "OTP_SUBMODULE",
                     request
             );
-            
+
             logger.debug("Bank middleware API response: {}", response);
             return response;
-            
+
         } catch (Exception e) {
             logger.error("Error calling bank middleware API: {}", e.getMessage(), e);
             throw e;
         }
     }
-    
+
 
     private SimpleValidationResponse createSuccessResponseWithUsername(String customerNumber, String username) {
         return SimpleValidationResponse.builder()
@@ -269,10 +270,9 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
             return null;
         } catch (Exception e) {
             logger.error("Error retrieving customer username for customerNumber: {}, error: {}", customerNumber, e.getMessage(), e);
-            return null;
+            throw e;
         }
     }
-    
 
     private boolean isCardBlocked(String cardNumber) {
         try {
@@ -284,7 +284,6 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
             return false;
         }
     }
-    
 
     private boolean isOtpBlocked(String username) {
         try {
@@ -305,18 +304,18 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                             .createdAt(LocalDateTime.now())
                             .updatedAt(LocalDateTime.now())
                             .build());
-            
+
             boolean isBlocked = cardValidation.incrementAttempts();
             cardValidationRepository.save(cardValidation);
-            
+
             if (isBlocked) {
-                logger.warn("Card blocked due to maximum failed attempts - CardNumber: {}, Attempts: {}", 
+                logger.warn("Card blocked due to maximum failed attempts - CardNumber: {}, Attempts: {}",
                         cardNumber, cardValidation.getAttempts());
             } else {
-                logger.warn("Failed attempt recorded - CardNumber: {}, Attempts: {}/{}", 
+                logger.warn("Failed attempt recorded - CardNumber: {}, Attempts: {}/{}",
                         cardNumber, cardValidation.getAttempts(), CardValidation.MAX_FAILED_ATTEMPTS);
             }
-            
+
             return isBlocked;
         } catch (Exception e) {
             logger.error("Error handling failed attempt for cardNumber: {}, error: {}", cardNumber, e.getMessage(), e);
@@ -336,7 +335,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
             logger.error("Error resetting failed attempts for cardNumber: {}, error: {}", cardNumber, e.getMessage(), e);
         }
     }
-    
+
     /**
      * Increments OTP attempts for successful OTP generation
      * @param username The username
@@ -354,8 +353,8 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
         }
     }
 
-    private OtpGenerateResponse callOtpGenerationAPI(String unit, String channel, String lang, String serviceId, 
-                                                   String screenId, String moduleId, String subModuleId, 
+    private OtpGenerateResponse callOtpGenerationAPI(String unit, String channel, String lang, String serviceId,
+                                                   String screenId, String moduleId, String subModuleId,
                                                    String customerNumber) {
         try {
             OtpGenerateRequest otpRequest = OtpGenerateRequest.builder()
@@ -377,7 +376,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
             logger.debug("Calling OTP generation API for customerNumber: {}", customerNumber);
             OtpGenerateResponse response = otpService.generateOtp(
                     unit != null ? unit : "DEFAULT",
-                    channel != null ? channel : "WEB", 
+                    channel != null ? channel : "WEB",
                     lang != null ? lang : "en",
                     serviceId != null ? serviceId : "OTP_SERVICE",
                     screenId != null ? screenId : "LOGIN_SCREEN",
@@ -385,10 +384,10 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                     subModuleId != null ? subModuleId : "OTP_SUBMODULE",
                     otpRequest
             );
-            
+
             logger.debug("OTP generation API response: {}", response);
             return response;
-            
+
         } catch (Exception e) {
             logger.error("Error calling OTP generation API: {}", e.getMessage(), e);
             throw e;
