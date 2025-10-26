@@ -39,13 +39,15 @@ public class CardBinValidationController {
             @Valid @RequestBody CardBinValidationWrapper wrapper) {
 
         CardBinValidationRequest request = wrapper.getRequestInfo();
+        DeviceInfo deviceRequest = wrapper.getDeviceInfo();
 
         logger.info("CardBin validation and PIN encryption request received - Unit: {}, Channel: {}, ServiceId: {}, CardNumber: {}",
                 unit, channel, serviceId, maskCardNumber(request.getCardNumber()));
 
         try {
             GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                    unit, channel, lang, serviceId, screenId, moduleId, subModuleId, request);
+                    unit, channel, lang, serviceId, screenId, moduleId, subModuleId, request, deviceRequest);
+
 
             if (isTrue) {
                 return ResponseEntity.ok(response);

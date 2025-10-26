@@ -25,7 +25,7 @@ public class AppConstant {
     public static final String SUCCESS = "Successfully processed";
     public static final String NODATA = "NO DATA CONTENT";
     public static final String FAILURECODE = "000001";
-    public static final String GEN_ERROR_CODE = "GENER_CODE";
+    public static final String GEN_ERROR_CODE = "000500";
     public static final String GEN_ERROR_DESC = "Unable to process your request,Please contact Customer Care for futher assistance or try again later";
     public static final String VIEW_RMPROFILE = "VIEW_RMPROFILE";
     public static final String DEFAULT_USER = "default_user";
@@ -110,7 +110,19 @@ public class AppConstant {
     public static final String OTP_GENERATE_MSG= "OTP Generation failed";
     public static final String INVALID_ATTAMPTS_CODE = "000418";
     public static final String INVALID_ATTAMPTS_MSG = "Max invalid attempts reached for card validation";
-
+    public static final String DCARD_SERVICE = "DCARD.PIN.VERIFICATION";
+    public static final String CARD_NUMBER = "cardNumber";
+    public static final String PIN = "pin";
+    public static final String DEFAULT_UNIT = "DEFAULT";
+    public static final String DEFAULT_CHANNEL = "WEB";
+    public static final String DEFAULT_SERVICEID = "OTP_SERVICE";
+    public static final String DEFAULT_SCREENID = "LOGIN_SCREEN";
+    public static final String DEFAULT_MODULEID = "AUTH_MODULE";
+    public static final String DEFAULT_SUNMODULEID = "OTP_SUBMODULE";
+    public static final String LOCKED = "LOCKED";
+    public static final String BLOCKED = "BLOCKED";
+    public static final String INVALID = "INACTIVE";
+    public static final String OTP_FORGET = "forget";
     public static final String MWRESULT_CODE = "0";
 
     public static final String SOAP_RESULT_CODE = "0";

@@ -2,6 +2,7 @@ package com.dukhan.forgot.adapter.api.service.impl;
 
 import com.dukhan.forgot.adapter.api.service.CardBinValidationService;
 import com.dukhan.forgot.domain.model.dto.CardBinValidationRequest;
+import com.dukhan.forgot.domain.model.dto.DeviceInfo;
 import com.dukhan.forgot.domain.model.dto.SimpleValidationResponse;
 import com.dukhan.forgot.domain.model.entity.CardBinMaster;
 import com.dukhan.forgot.infrastructure.common.GenericResponse;
@@ -27,7 +28,7 @@ public class MockCardBinValidationServiceImpl implements CardBinValidationServic
     private ObjectMapper objectMapper;
 
     @Override
-    public GenericResponse<SimpleValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
+    public GenericResponse<SimpleValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request, DeviceInfo deviceInfo) {
         logger.info("Mock CardBinValidationService.validateCardBin called with unit: {}, channel: {}, serviceId: {}", unit, channel, serviceId);
         
         String cardNumber = request.getCardNumber();

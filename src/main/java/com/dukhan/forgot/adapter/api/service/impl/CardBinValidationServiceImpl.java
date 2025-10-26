@@ -63,7 +63,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
     private OtpDetailsRepository otpDetailsRepository;
 
     @Override
-    public GenericResponse<SimpleValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request) {
+    public GenericResponse<SimpleValidationResponse> validateCardBin(String unit, String channel, String lang, String serviceId, String screenId, String moduleId, String subModuleId, CardBinValidationRequest request, DeviceInfo deviceInfo) {
         logger.debug("Starting CardBin validation for unit: {}, channel: {}, serviceId: {}", unit, channel, serviceId);
 
         try {
@@ -109,7 +109,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
             }
 
             try {
-                BankMiddlewareResponse bankResponse = callBankMiddlewareAPI(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, cardNumber, encryptedPin);
+                BankMiddlewareResponse bankResponse = callBankMiddlewareAPI(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, cardNumber, encryptedPin, deviceInfo);
                 if (bankResponse != null && "SUCCESS".equals(bankResponse.getStatus())) {
                     String customerNumber = bankResponse.getBankResponse().getCustomerNumber();
                     String correlationId = bankResponse.getBankResponse().getCorrelationId();
@@ -136,7 +136,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                         return GenericResponse.error(AppConstant.OTP_LIMIT, AppConstant.OTP_LIMIT_MSG);
                     }
 
-                    OtpGenerateResponse otpResponse = callOtpGenerationAPI(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, customerNumber);
+                    OtpGenerateResponse otpResponse = callOtpGenerationAPI(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, customerNumber, deviceInfo);
                     if (otpResponse != null && otpResponse.getStatus() != null &&
                             AppConstant.RESULT_CODE.equals(otpResponse.getStatus().getCode()) &&
                             AppConstant.SUCCESS.equals(otpResponse.getStatus().getDescription())) {
@@ -198,17 +198,17 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
 
     private BankMiddlewareResponse callBankMiddlewareAPI(String unit, String channel, String lang, String serviceId,
                                                          String screenId, String moduleId, String subModuleId,
-                                                         String cardNumber, String encryptedPin) {
+                                                         String cardNumber, String encryptedPin, DeviceInfo deviceInfo) {
         try {
             BankMiddlewareRequest request = BankMiddlewareRequest.builder()
-                    .serviceName("DCARD.PIN.VERIFICATION")
+                    .serviceName(AppConstant.DCARD_SERVICE)
                     .parameters(Arrays.asList(
                             BankMiddlewareRequest.Parameter.builder()
-                                    .fieldName("cardNumber")
+                                    .fieldName(AppConstant.CARD_NUMBER)
                                     .fieldValue(cardNumber)
                                     .build(),
                             BankMiddlewareRequest.Parameter.builder()
-                                    .fieldName("pin")
+                                    .fieldName(AppConstant.PIN)
                                     .fieldValue(encryptedPin)
                                     .build()
                     ))
@@ -216,13 +216,13 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
 
             logger.debug("Calling bank middleware API with cardNumber: {}", cardNumber);
             BankMiddlewareResponse response = bankMiddlewareService.callBankMiddleware(
-                    unit != null ? unit : "DEFAULT",
-                    channel != null ? channel : "WEB",
-                    lang != null ? lang : "en",
-                    serviceId != null ? serviceId : "OTP_SERVICE",
-                    screenId != null ? screenId : "LOGIN_SCREEN",
-                    moduleId != null ? moduleId : "AUTH_MODULE",
-                    subModuleId != null ? subModuleId : "OTP_SUBMODULE",
+                    unit != null ? unit : AppConstant.DEFAULT_UNIT,
+                    channel != null ? channel : AppConstant.DEFAULT_CHANNEL,
+                    lang != null ? lang :AppConstant.DEFAULT_LANGUAGE,
+                    serviceId != null ? serviceId : AppConstant.DEFAULT_SERVICEID,
+                    screenId != null ? screenId : AppConstant.DEFAULT_SCREENID,
+                    moduleId != null ? moduleId : AppConstant.DEFAULT_MODULEID,
+                    subModuleId != null ? subModuleId : AppConstant.DEFAULT_SUNMODULEID,
                     request
             );
 
@@ -252,9 +252,9 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                     .map(customer -> {
                         String status = customer.getStatus();
                         if (status != null && (
-                                "LOCKED".equalsIgnoreCase(status) ||
-                                        "BLOCKED".equalsIgnoreCase(status) ||
-                                        "INACTIVE".equalsIgnoreCase(status))) {
+                                AppConstant.LOCKED.equalsIgnoreCase(status) ||
+                                        AppConstant.BLOCKED.equalsIgnoreCase(status) ||
+                                        AppConstant.INVALID.equalsIgnoreCase(status))) {
                             throw new UserBlockedException("User is blocked");
                         }
                         if (customer.getUpdatedAt() != null) {
@@ -348,33 +348,33 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
 
     private OtpGenerateResponse callOtpGenerationAPI(String unit, String channel, String lang, String serviceId,
                                                      String screenId, String moduleId, String subModuleId,
-                                                     String customerNumber) {
+                                                     String customerNumber, DeviceInfo deviceInfo) {
         try {
             OtpGenerateRequest otpRequest = OtpGenerateRequest.builder()
                     .requestInfo(OtpGenerateRequest.RequestInfo.builder()
-                            .action("forget")
+                            .action(AppConstant.OTP_FORGET)
                             .rimNo(customerNumber)
                             .build())
                     .deviceInfo(DeviceInfo.builder()
-                            .deviceId("DEVICE123")
-                            .ipAddress("192.168.1.1")
-                            .vendorId("VENDOR123")
-                            .osVersion("1.0.0")
-                            .osType("Android")
-                            .appVersion("2.1.0")
-                            .endToEndId("E2E123")
+                            .deviceId(deviceInfo.getDeviceId())
+                            .ipAddress(deviceInfo.getIpAddress())
+                            .vendorId(deviceInfo.getVendorId())
+                            .osVersion(deviceInfo.getOsVersion())
+                            .osType(deviceInfo.getOsType())
+                            .appVersion(deviceInfo.getAppVersion())
+                            .endToEndId(deviceInfo.getEndToEndId())
                             .build())
                     .build();
 
             logger.debug("Calling OTP generation API for customerNumber: {}", customerNumber);
             OtpGenerateResponse response = otpService.generateOtp(
-                    unit != null ? unit : "DEFAULT",
-                    channel != null ? channel : "WEB",
-                    lang != null ? lang : "en",
-                    serviceId != null ? serviceId : "OTP_SERVICE",
-                    screenId != null ? screenId : "LOGIN_SCREEN",
-                    moduleId != null ? moduleId : "AUTH_MODULE",
-                    subModuleId != null ? subModuleId : "OTP_SUBMODULE",
+                    unit != null ? unit : AppConstant.DEFAULT_UNIT,
+                    channel != null ? channel : AppConstant.DEFAULT_CHANNEL,
+                    lang != null ? lang :AppConstant.DEFAULT_LANGUAGE,
+                    serviceId != null ? serviceId : AppConstant.DEFAULT_SERVICEID,
+                    screenId != null ? screenId : AppConstant.DEFAULT_SCREENID,
+                    moduleId != null ? moduleId : AppConstant.DEFAULT_MODULEID,
+                    subModuleId != null ? subModuleId : AppConstant.DEFAULT_SUNMODULEID,
                     otpRequest
             );
 
