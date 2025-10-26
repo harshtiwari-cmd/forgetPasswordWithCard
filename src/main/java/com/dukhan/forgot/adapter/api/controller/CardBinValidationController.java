@@ -38,11 +38,11 @@ public class CardBinValidationController {
             @RequestHeader(name = AppConstant.SUB_MODULE_ID, required = true) String subModuleId,
             @Valid @RequestBody CardBinValidationWrapper wrapper) {
 
-           CardBinValidationRequest request = wrapper.getRequestInfo();
+        CardBinValidationRequest request = wrapper.getRequestInfo();
 
-           logger.info("CardBin validation and PIN encryption request received - Unit: {}, Channel: {}, ServiceId: {}, CardNumber: {}",
+        logger.info("CardBin validation and PIN encryption request received - Unit: {}, Channel: {}, ServiceId: {}, CardNumber: {}",
                 unit, channel, serviceId, maskCardNumber(request.getCardNumber()));
-        
+
         try {
             GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
                     unit, channel, lang, serviceId, screenId, moduleId, subModuleId, request);
@@ -50,12 +50,12 @@ public class CardBinValidationController {
             if (isTrue) {
                 return ResponseEntity.ok(response);
             }
-            
+
             if (response == null || response.getStatus() == null) {
                 logger.warn("Service returned null response or status");
                 return ResponseEntity.ok(GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC));
             }
-            
+
             if (AppConstant.RESULT_CODE.equals(response.getStatus().getCode())) {
                 SimpleValidationResponse data = response.getData();
                 if (data == null || (data.getRimNumber() == null && data.getUserName() == null && !data.isOtp())) {
@@ -64,7 +64,7 @@ public class CardBinValidationController {
                 }
                 return ResponseEntity.ok(GenericResponse.success(data));
             }
-            
+
             logger.warn("Service returned error response - Code: {}, Description: {}",
                     response.getStatus().getCode(), response.getStatus().getDescription());
             return ResponseEntity.ok(response);
@@ -74,7 +74,7 @@ public class CardBinValidationController {
             return ResponseEntity.ok(GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC));
         }
     }
-    
+
     @PostMapping("/bin-details")
     public GenericResponse<java.util.List<CardBinMaster>> getActiveBins(
             @RequestHeader(name = AppConstant.SERVICEID, required = true) String serviceId,
@@ -84,26 +84,26 @@ public class CardBinValidationController {
             @RequestHeader(name = AppConstant.HEADER_CHANNEL, required = true) String channel,
             @RequestHeader(name = AppConstant.HEADER_ACCEPT_LANGUAGE, required = false) String lang,
             @Valid @RequestBody(required = true) CardBinAllWrapper wrapper) {
-        
+
         if (wrapper == null) {
             logger.error("Request body is null - ServiceId: {}, ModuleId: {}", serviceId, moduleId);
             return GenericResponse.error(AppConstant.GEN_ERROR_CODE, "Request body is required");
         }
-        
+
         if (wrapper.getDeviceInfo() == null) {
             logger.error("Device information is null - ServiceId: {}, ModuleId: {}", serviceId, moduleId);
             return GenericResponse.error(AppConstant.GEN_ERROR_CODE, "Device information is required");
         }
-        
-        logger.info("Request received to fetch active CardBin records - ServiceId: {}, ModuleId: {}, SubModuleId: {}, ScreenId: {}, Channel: {}, DeviceId: {}", 
+
+        logger.info("Request received to fetch active CardBin records - ServiceId: {}, ModuleId: {}, SubModuleId: {}, ScreenId: {}, Channel: {}, DeviceId: {}",
                 serviceId, moduleId, subModuleId, screenId, channel, wrapper.getDeviceInfo().getDeviceId());
         try {
             GenericResponse<java.util.List<CardBinMaster>> response = cardBinValidationService.getActiveBins();
             if (response == null || response.getStatus() == null || !AppConstant.RESULT_CODE.equals(response.getStatus().getCode())) {
                 logger.error("Service returned error response for getActiveBins");
-                return GenericResponse.error(AppConstant.GEN_ERROR_CODE, AppConstant.GEN_ERROR_DESC);
+                return GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC);
             }
-            
+
             if (response.getData() == null || response.getData().isEmpty()) {
                 logger.info("No active CardBin records found");
                 return GenericResponse.successNoData(Collections.emptyList());
@@ -112,7 +112,7 @@ public class CardBinValidationController {
             return GenericResponse.success(response.getData());
         } catch (Exception e) {
             logger.error("Error occurred while fetching active CardBin records: {}", e.getMessage(), e);
-            return GenericResponse.error(AppConstant.GEN_ERROR_CODE, AppConstant.GEN_ERROR_DESC);
+            return GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC);
         }
     }
 

@@ -1,5 +1,5 @@
 mock:
-  enabled: true
+  enabled: false
 otp:
   service:
     url: http://34.1.33.119:9097/rb-user-management/api/v1/otp/generate
