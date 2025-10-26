@@ -1,6 +1,7 @@
 package com.dukhan.forgot.adapter.api.service.impl;
 
 import com.dukhan.forgot.domain.model.dto.CardBinValidationRequest;
+import com.dukhan.forgot.domain.model.dto.DeviceInfo;
 import com.dukhan.forgot.domain.model.dto.SimpleValidationResponse;
 import com.dukhan.forgot.domain.model.entity.CardBinMaster;
 import com.dukhan.forgot.infrastructure.common.GenericResponse;
@@ -34,12 +35,25 @@ class MockCardBinValidationServiceImplTest {
 
     private CardBinValidationRequest validRequest;
 
+    private DeviceInfo deviceInfo;
+
     @BeforeEach
     void setUp() {
         validRequest = CardBinValidationRequest.builder()
                 .cardNumber("4203741234567889")
                 .pin("1234")
                 .build();
+
+        deviceInfo = DeviceInfo.builder()
+                .deviceId("DEVICE123")
+                .ipAddress("192.168.1.1")
+                .vendorId("VENDOR123")
+                .osVersion("1.0.0")
+                .osType("Android")
+                .appVersion("2.1.0")
+                .endToEndId("E2E123")
+                .build();
+
     }
 
     @Test
@@ -56,8 +70,7 @@ class MockCardBinValidationServiceImplTest {
 
         // Act
         GenericResponse<SimpleValidationResponse> response = service.validateCardBin(
-                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest
-        );
+                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest, deviceInfo);
 
         // Assert
         assertNotNull(response);
@@ -66,7 +79,7 @@ class MockCardBinValidationServiceImplTest {
         assertTrue(response.getData().isOtp());
         assertEquals("John Doe", response.getData().getUserName());
         assertEquals("000000", response.getStatus().getCode());
-        assertEquals("SUCCESS", response.getStatus().getDescription());
+        assertEquals("Successfully processed", response.getStatus().getDescription());
 
         verify(objectMapper, times(1)).readValue(any(InputStream.class), any(TypeReference.class));
     }
@@ -84,8 +97,7 @@ class MockCardBinValidationServiceImplTest {
 
         // Act
         GenericResponse<SimpleValidationResponse> response = service.validateCardBin(
-                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest
-        );
+                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest, deviceInfo);
 
         // Assert
         assertNotNull(response);
@@ -93,7 +105,7 @@ class MockCardBinValidationServiceImplTest {
         assertEquals("12345", response.getData().getRimNumber());
         assertTrue(response.getData().isOtp());
         assertEquals("John Doe", response.getData().getUserName());
-        assertEquals("SUCCESS", response.getStatus().getDescription());
+        assertEquals("Successfully processed", response.getStatus().getDescription());
 
         verify(objectMapper, times(1)).readValue(any(InputStream.class), any(TypeReference.class));
     }
@@ -108,7 +120,7 @@ class MockCardBinValidationServiceImplTest {
         when(objectMapper.readValue(any(InputStream.class), any(TypeReference.class))).thenReturn(mockResponse);
 
         GenericResponse<SimpleValidationResponse> response = service.validateCardBin(
-                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest
+                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest, deviceInfo
         );
 
         assertNotNull(response);
@@ -127,7 +139,7 @@ class MockCardBinValidationServiceImplTest {
         when(objectMapper.readValue(any(InputStream.class), any(TypeReference.class))).thenReturn(mockResponse);
 
         GenericResponse<SimpleValidationResponse> response = service.validateCardBin(
-                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest
+                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest, deviceInfo
         );
 
         assertNotNull(response);
@@ -147,7 +159,7 @@ class MockCardBinValidationServiceImplTest {
         when(objectMapper.readValue(any(InputStream.class), any(TypeReference.class))).thenReturn(mockResponse);
 
         GenericResponse<SimpleValidationResponse> response = service.validateCardBin(
-                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest
+                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest ,deviceInfo
         );
 
         assertNotNull(response);
@@ -166,7 +178,7 @@ class MockCardBinValidationServiceImplTest {
         when(objectMapper.readValue(any(InputStream.class), any(TypeReference.class))).thenReturn(mockResponse);
 
         GenericResponse<SimpleValidationResponse> response = service.validateCardBin(
-                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest
+                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest, deviceInfo
         );
 
         assertNotNull(response);
@@ -185,7 +197,7 @@ class MockCardBinValidationServiceImplTest {
         when(objectMapper.readValue(any(InputStream.class), any(TypeReference.class))).thenReturn(mockResponse);
 
         GenericResponse<SimpleValidationResponse> response = service.validateCardBin(
-                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest
+                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest, deviceInfo
         );
 
         assertNotNull(response);
@@ -204,7 +216,7 @@ class MockCardBinValidationServiceImplTest {
         when(objectMapper.readValue(any(InputStream.class), any(TypeReference.class))).thenReturn(mockResponse);
 
         GenericResponse<SimpleValidationResponse> response = service.validateCardBin(
-                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest
+                "unit1", "channel1", "EN", "service1", "screen1", "module1", "subModule1", validRequest, deviceInfo
         );
 
         assertNotNull(response);
@@ -220,7 +232,7 @@ class MockCardBinValidationServiceImplTest {
 
         // Act
         GenericResponse<SimpleValidationResponse> response = service.validateCardBin(
-                "unit", "channel", "EN", "service", "screen", "module", "subModule", validRequest
+                "unit", "channel", "EN", "service", "screen", "module", "subModule", validRequest, deviceInfo
         );
 
         // Assert
@@ -245,7 +257,7 @@ class MockCardBinValidationServiceImplTest {
 
         // Act
         GenericResponse<SimpleValidationResponse> response = service.validateCardBin(
-                "u", "c", "EN", "s", "sc", "m", "sub", unknownCard
+                "u", "c", "EN", "s", "sc", "m", "sub", unknownCard, deviceInfo
         );
 
         // Assert
@@ -268,7 +280,7 @@ class MockCardBinValidationServiceImplTest {
         assertNotNull(response);
         assertNotNull(response.getData());
         assertEquals(2, response.getData().size());
-        assertEquals("SUCCESS", response.getStatus().getDescription());
+        assertEquals("Successfully processed", response.getStatus().getDescription());
 
         verify(objectMapper, times(1)).readValue(any(InputStream.class), any(TypeReference.class));
     }
