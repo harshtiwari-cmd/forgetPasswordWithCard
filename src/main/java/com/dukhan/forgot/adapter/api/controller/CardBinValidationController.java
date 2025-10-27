@@ -60,7 +60,7 @@ public class CardBinValidationController {
 
             if (AppConstant.RESULT_CODE.equals(response.getStatus().getCode())) {
                 SimpleValidationResponse data = response.getData();
-                if (data == null || (data.getRimNumber() == null && data.getUserName() == null && !data.isOtp())) {
+                if (data == null || (data.getRimNo() == null && data.getUserName() == null && !data.isOtpStatus())) {
                     logger.warn("Success response but invalid data structure");
                     return ResponseEntity.ok(GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC));
                 }

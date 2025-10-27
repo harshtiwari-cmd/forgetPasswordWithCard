@@ -10,10 +10,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class SimpleValidationResponse {
-    
-    private String rimNumber;
-    private String userName;
-    private boolean otp;
-    
 
+    private String rimNo;
+    private String userName;
+    private boolean otpStatus;
+    private String jwtToken;
 }

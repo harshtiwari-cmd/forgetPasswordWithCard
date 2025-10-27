@@ -113,6 +113,12 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                 if (bankResponse != null && "SUCCESS".equals(bankResponse.getStatus())) {
                     String customerNumber = bankResponse.getBankResponse().getCustomerNumber();
                     String correlationId = bankResponse.getBankResponse().getCorrelationId();
+                    if(customerNumber == null){
+                        if(AppConstant.INVALID_PIN_BLOCK.equals(bankResponse.getBankResponse().getReturnStatusProvider().getReturnCodeDescProvider())) {
+                            return GenericResponse.error(AppConstant.USER_NOT_FOUND_CODE, AppConstant.INVALID_PIN_BLOCK);
+                        }
+                        return GenericResponse.error(AppConstant.USER_NOT_FOUND_CODE, AppConstant.USER_NOT_FOUND_MSG);
+                    }
 
                     logger.info("Bank middleware API call successful - CustomerNumber: {}, CorrelationId: {}", customerNumber, correlationId);
 
@@ -126,7 +132,6 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                         logger.warn("User must retry after 24 hours for customerNumber: {}", customerNumber);
                         return GenericResponse.error(AppConstant.RETRY_DATA_CODE, AppConstant.RETRY_DATA_MSG);
                     }
-
                     if (username == null) {
                         logger.warn("Customer not found in database for customerNumber: {}", customerNumber);
                         return GenericResponse.error(AppConstant.USER_NOT_FOUND_CODE, AppConstant.USER_NOT_FOUND_MSG);
@@ -141,10 +146,11 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                     if (otpResponse != null && otpResponse.getStatus() != null &&
                             AppConstant.RESULT_CODE.equals(otpResponse.getStatus().getCode()) &&
                             AppConstant.SUCCESS.equals(otpResponse.getStatus().getDescription())) {
+                        String jwtToken=otpResponse.getData().getJwtToken();
                         logger.info("OTP generation successful for customer: {}", customerNumber);
                         resetFailedAttempts(cardNumber);
                         incrementOtpAttempts(customerNumber);
-                        SimpleValidationResponse successResponse = createSuccessResponseWithUsername(customerNumber, username);
+                        SimpleValidationResponse successResponse = createSuccessResponseWithUsername(customerNumber, username, jwtToken);
                         return GenericResponse.success(successResponse);
                     } else {
                         logger.warn("OTP generation failed - Status: {}, Message: {}",
@@ -237,11 +243,12 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
     }
 
 
-    private SimpleValidationResponse createSuccessResponseWithUsername(String customerNumber, String username) {
+    private SimpleValidationResponse createSuccessResponseWithUsername(String customerNumber, String username,String jwtToken) {
         return SimpleValidationResponse.builder()
-                .rimNumber(customerNumber)
+                .rimNo(customerNumber)
                 .userName(username)
-                .otp(true)
+                .otpStatus(true)
+                .jwtToken(jwtToken)
                 .build();
     }
 
@@ -285,6 +292,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
     }
     private boolean handleFailedAttempt(String cardNumber) {
         try {
+            logger.info("CardNumber: ",cardNumber);
             CardValidation cardValidation = cardValidationRepository.findByCardNumber(cardNumber)
                     .orElse(CardValidation.builder()
                             .cardNumber(cardNumber)

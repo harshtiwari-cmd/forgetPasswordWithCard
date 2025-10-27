@@ -18,6 +18,7 @@ public class AppConstant {
     public static final String DATE_FORMATE = "yyyy-MM-dd";
     public static final String RATE_FORMATE = "0.00";
     public static final String COUNTRY_CODE = "DOHA";
+    public static final String INVALID_PIN_BLOCK = "INVALID PIN BLOCK";
 
     public static final String RESULT_CODE = "000000";
     public static final String RESULT_DESC = "SUCCESS";

@@ -21,7 +21,7 @@ public class OtpGenerateResponse {
         private String code;
         private String description;
     }
-    
+
     @Data
     @Builder
     @NoArgsConstructor
@@ -29,5 +29,6 @@ public class OtpGenerateResponse {
     public static class OtpData {
         private String mobileNumber;
         private String message;
+        private String jwtToken;
     }
 }
