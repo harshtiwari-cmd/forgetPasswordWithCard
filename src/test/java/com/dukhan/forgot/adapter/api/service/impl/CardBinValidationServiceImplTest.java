@@ -70,6 +70,7 @@ class CardBinValidationServiceImplTest {
     private CardBinMaster cardBinMaster;
     private BankMiddlewareResponse bankResponse;
     private OtpGenerateResponse otpResponse;
+    private DeviceInfo deviceInfo;
 
 
 
@@ -99,13 +100,23 @@ class CardBinValidationServiceImplTest {
 
         otpResponse = OtpGenerateResponse.builder()
                 .status(OtpGenerateResponse.Status.builder()
-                        .code("000000")
-                        .description("SUCCESS")
+                        .code(AppConstant.RESULT_CODE)
+                        .description(AppConstant.SUCCESS)
                         .build())
                 .data(OtpGenerateResponse.OtpData.builder()
                         .mobileNumber("*******3335")
                         .message("OTP generated successfully")
                         .build())
+                .build();
+
+        deviceInfo = DeviceInfo.builder()
+                .deviceId("DEVICE123")
+                .ipAddress("192.168.1.1")
+                .vendorId("VENDOR123")
+                .osVersion("1.0.0")
+                .osType("Android")
+                .appVersion("2.1.0")
+                .endToEndId("E2E123")
                 .build();
 
     }
@@ -124,12 +135,12 @@ class CardBinValidationServiceImplTest {
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         // Then
         assertNotNull(response);
         assertEquals(AppConstant.ERROR_DATA_CODE, response.getStatus().getCode());
-        assertEquals("CARD_NOT_VALID_MUST_USE_DEBIT", response.getStatus().getDescription());
+        assertEquals(AppConstant.BIN_VALIDATE_DATA_MSG, response.getStatus().getDescription());
     }
 
     @Test
@@ -155,7 +166,7 @@ class CardBinValidationServiceImplTest {
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         // Then
         assertNotNull(response);
@@ -193,12 +204,12 @@ class CardBinValidationServiceImplTest {
         when(customerRepository.findByCustomerId(123456L)).thenReturn(Optional.of(customer));
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         // Then
         assertNotNull(response);
-        assertEquals(AppConstant.ERROR_DATA_CODE, response.getStatus().getCode());
-        assertEquals("USER_BLOCKED_CONTACT_BANK", response.getStatus().getDescription());
+        assertEquals(AppConstant.USER_BLOCKED, response.getStatus().getCode());
+        assertEquals(AppConstant.USER_BLOCKED_DATA_MSG, response.getStatus().getDescription());
     }
 
     @Test
@@ -215,12 +226,12 @@ class CardBinValidationServiceImplTest {
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         // Then
         assertNotNull(response);
         assertEquals(AppConstant.ERROR_DATA_CODE, response.getStatus().getCode());
-        assertEquals("BIN_NOT_VALID", response.getStatus().getDescription());
+        assertEquals(AppConstant.BIN_VALIDATE_DATA_MSG, response.getStatus().getDescription());
 
         verify(cardBasicValidations, times(1)).findMatchingBin("1234567890123456");
     }
@@ -232,12 +243,12 @@ class CardBinValidationServiceImplTest {
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         // Then
         assertNotNull(response);
         assertEquals(AppConstant.ERROR_DATA_CODE, response.getStatus().getCode());
-        assertEquals("BIN_NOT_VALID", response.getStatus().getDescription());
+        assertEquals(AppConstant.BIN_VALIDATE_DATA_MSG, response.getStatus().getDescription());
 
         verify(cardBasicValidations, times(1)).findMatchingBin("1234567890123456");
     }
@@ -251,7 +262,7 @@ class CardBinValidationServiceImplTest {
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         // Then
         assertNotNull(response);
@@ -276,12 +287,12 @@ class CardBinValidationServiceImplTest {
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         // Then
         assertNotNull(response);
-        assertEquals(AppConstant.GEN_ERROR_CODE, response.getStatus().getCode());
-        assertEquals(AppConstant.GEN_ERROR_DESC, response.getStatus().getDescription());
+        assertEquals(AppConstant.INNER_SERVICE, response.getStatus().getCode());
+        assertEquals(AppConstant.INNER_SERVICE_MSG, response.getStatus().getDescription());
 
         verify(cardBasicValidations, times(1)).findMatchingBin("1234567890123456");
         verify(hsmEncryptor, times(1)).generatePinBlockUnderZPK("1234", "1234567890123456", "CardBinValidation");
@@ -314,12 +325,12 @@ class CardBinValidationServiceImplTest {
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         // Then
         assertNotNull(response);
         assertEquals(AppConstant.USER_NOT_FOUND_CODE, response.getStatus().getCode());
-        assertEquals("USER_NOT_EXIST", response.getStatus().getDescription());
+        assertEquals(AppConstant.USER_NOT_FOUND_MSG, response.getStatus().getDescription());
 
         verify(cardBasicValidations, times(1)).findMatchingBin("1234567890123456");
         verify(otpService, never()).generateOtp(anyString(), anyString(), anyString(), anyString(),
@@ -351,12 +362,12 @@ class CardBinValidationServiceImplTest {
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         // Then
         assertNotNull(response);
         assertEquals(AppConstant.USER_NOT_FOUND_CODE, response.getStatus().getCode());
-        assertEquals("USER_NOT_EXIST", response.getStatus().getDescription());
+        assertEquals(AppConstant.USER_NOT_FOUND_MSG, response.getStatus().getDescription());
 
         verify(cardBasicValidations, times(1)).findMatchingBin("1234567890123456");
         verify(customerRepository).findByCustomerId(999999L);
@@ -403,12 +414,12 @@ class CardBinValidationServiceImplTest {
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         // Then
         assertNotNull(response);
-        assertEquals(AppConstant.GEN_ERROR_CODE, response.getStatus().getCode());
-        assertEquals(AppConstant.GEN_ERROR_DESC, response.getStatus().getDescription());
+        assertEquals(AppConstant.OTP_GENERATE, response.getStatus().getCode());
+        assertEquals(AppConstant.OTP_GENERATE_MSG, response.getStatus().getDescription());
 
         verify(otpService, times(1)).generateOtp(anyString(), anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString(), any(OtpGenerateRequest.class));
@@ -421,7 +432,7 @@ class CardBinValidationServiceImplTest {
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         // Then
         assertNotNull(response);
@@ -507,7 +518,7 @@ class CardBinValidationServiceImplTest {
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         // Then
         assertNotNull(response);
@@ -523,12 +534,12 @@ class CardBinValidationServiceImplTest {
 
         // When
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         // Then
         assertNotNull(response);
         assertEquals(AppConstant.ERROR_DATA_CODE, response.getStatus().getCode());
-        assertEquals("BIN_NOT_VALID", response.getStatus().getDescription());
+        assertEquals(AppConstant.BIN_VALIDATE_DATA_MSG, response.getStatus().getDescription());
     }
 
     @Test
@@ -545,11 +556,11 @@ class CardBinValidationServiceImplTest {
                 .thenReturn(bankResponse);
 
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "UNIT", "WEB", "en", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "UNIT", "WEB", "en", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request,deviceInfo);
 
 
         assertEquals(AppConstant.USER_NOT_FOUND_CODE, response.getStatus().getCode());
-        assertEquals("USER_NOT_EXIST", response.getStatus().getDescription());
+        assertEquals(AppConstant.USER_NOT_FOUND_MSG, response.getStatus().getDescription());
     }
 
     @Test
@@ -564,11 +575,11 @@ class CardBinValidationServiceImplTest {
         when(cardValidationRepository.findByCardNumber("1234567890123456")).thenReturn(Optional.of(cardValidation));
 
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "UNIT", "WEB", "en", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "UNIT", "WEB", "en", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
 
         assertEquals(AppConstant.INVALID_ATTAMPTS_CODE, response.getStatus().getCode());
-        assertEquals("INVALID_ATTEMPTS_LIMIT_EXCEEDED", response.getStatus().getDescription());
+        assertEquals(AppConstant.INVALID_ATTAMPTS_MSG, response.getStatus().getDescription());
 
         verify(cardValidationRepository, times(1)).findByCardNumber("1234567890123456");
     }
@@ -595,10 +606,10 @@ class CardBinValidationServiceImplTest {
         when(dateTimeProvider.getNow()).thenReturn(Optional.of(LocalDateTime.now()));
 
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "UNIT", "WEB", "en", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "UNIT", "WEB", "en", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         assertEquals(AppConstant.RETRY_DATA_CODE, response.getStatus().getCode());
-        assertEquals("RETRY_AFTER_24_HOURS", response.getStatus().getDescription());
+        assertEquals(AppConstant.RETRY_DATA_MSG, response.getStatus().getDescription());
     }
 
     @Test
@@ -625,10 +636,10 @@ class CardBinValidationServiceImplTest {
                 .thenReturn(List.of(new OtpDetails()));
 
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "UNIT", "WEB", "en", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "UNIT", "WEB", "en", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         assertEquals(AppConstant.OTP_LIMIT, response.getStatus().getCode());
-        assertEquals("USER_BLOCKED_OTP_LIMIT_EXCEEDED", response.getStatus().getDescription());
+        assertEquals(AppConstant.OTP_LIMIT_MSG, response.getStatus().getDescription());
     }
 
     @Test
@@ -672,7 +683,7 @@ class CardBinValidationServiceImplTest {
                 .thenReturn(otpGenerateResponse);
 
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "UNIT", "WEB", "en", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "UNIT", "WEB", "en", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         assertEquals(AppConstant.RESULT_CODE, response.getStatus().getCode());
         assertEquals(AppConstant.SUCCESS, response.getStatus().getDescription());
@@ -721,7 +732,7 @@ class CardBinValidationServiceImplTest {
                 .thenReturn(otpGenerateResponse);
 
         GenericResponse<SimpleValidationResponse> response = cardBinValidationService.validateCardBin(
-                "UNIT", "WEB", "en", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request);
+                "UNIT", "WEB", "en", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", request, deviceInfo);
 
         assertEquals(AppConstant.RESULT_CODE, response.getStatus().getCode());
         assertEquals(AppConstant.SUCCESS, response.getStatus().getDescription());

@@ -126,6 +126,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                         logger.warn("User must retry after 24 hours for customerNumber: {}", customerNumber);
                         return GenericResponse.error(AppConstant.RETRY_DATA_CODE, AppConstant.RETRY_DATA_MSG);
                     }
+
                     if (username == null) {
                         logger.warn("Customer not found in database for customerNumber: {}", customerNumber);
                         return GenericResponse.error(AppConstant.USER_NOT_FOUND_CODE, AppConstant.USER_NOT_FOUND_MSG);
@@ -279,7 +280,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
             return null;
         } catch (Exception e) {
             logger.error("Error retrieving customer username for customerNumber: {}, error: {}", customerNumber, e.getMessage(), e);
-            return null;
+            throw e;
         }
     }
     private boolean handleFailedAttempt(String cardNumber) {

@@ -33,9 +33,21 @@ class CardBinValidationControllerTest {
     private CardBinValidationWrapper wrapper;
     private CardBinValidationRequest request;
     private SimpleValidationResponse validationResponse;
+    private DeviceInfo deviceInfo;
 
     @BeforeEach
     void setUp() {
+
+        deviceInfo = DeviceInfo.builder()
+                .deviceId("DEVICE123")
+                .ipAddress("192.168.1.1")
+                .vendorId("VENDOR123")
+                .osVersion("1.0.0")
+                .osType("Android")
+                .appVersion("2.1.0")
+                .endToEndId("E2E123")
+                .build();
+
         request = CardBinValidationRequest.builder()
                 .cardNumber("1234567890123456")
                 .pin("1234")
@@ -43,6 +55,7 @@ class CardBinValidationControllerTest {
 
         wrapper = CardBinValidationWrapper.builder()
                 .requestInfo(request)
+                .deviceInfo(deviceInfo)
                 .build();
 
         validationResponse = SimpleValidationResponse.builder()
@@ -56,8 +69,9 @@ class CardBinValidationControllerTest {
     void testValidateCardBin_Success() {
         // Given
         GenericResponse<SimpleValidationResponse> serviceResponse = GenericResponse.success(validationResponse);
+
         when(cardBinValidationService.validateCardBin(anyString(), anyString(), anyString(), 
-                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class)))
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class), any(DeviceInfo.class)))
                 .thenReturn(serviceResponse);
 
         // When
@@ -75,7 +89,7 @@ class CardBinValidationControllerTest {
         assertTrue(response.getBody().getData().isOtp());
 
         verify(cardBinValidationService, times(1)).validateCardBin(anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class));
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class), any(DeviceInfo.class));
     }
 
     @Test
@@ -84,7 +98,7 @@ class CardBinValidationControllerTest {
         GenericResponse<SimpleValidationResponse> serviceResponse = GenericResponse.error(
                 AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC);
         when(cardBinValidationService.validateCardBin(anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class)))
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class), any(DeviceInfo.class)))
                 .thenReturn(serviceResponse);
 
         // When
@@ -99,14 +113,14 @@ class CardBinValidationControllerTest {
         assertEquals(AppConstant.VALIDATION_FAILURE_DESC, response.getBody().getStatus().getDescription());
 
         verify(cardBinValidationService, times(1)).validateCardBin(anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class));
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class), any(DeviceInfo.class));
     }
 
     @Test
     void testValidateCardBin_ServiceReturnsNull() {
         // Given
         when(cardBinValidationService.validateCardBin(anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class)))
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class),  any(DeviceInfo.class)))
                 .thenReturn(null);
 
         // When
@@ -127,7 +141,7 @@ class CardBinValidationControllerTest {
         GenericResponse<SimpleValidationResponse> serviceResponse = new GenericResponse<>();
         serviceResponse.setStatus(null);
         when(cardBinValidationService.validateCardBin(anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class)))
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class),  any(DeviceInfo.class)))
                 .thenReturn(serviceResponse);
 
         // When
@@ -152,7 +166,7 @@ class CardBinValidationControllerTest {
                 .build();
         GenericResponse<SimpleValidationResponse> serviceResponse = GenericResponse.success(invalidResponse);
         when(cardBinValidationService.validateCardBin(anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class)))
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class), any(DeviceInfo.class)))
                 .thenReturn(serviceResponse);
 
         // When
@@ -171,7 +185,7 @@ class CardBinValidationControllerTest {
     void testValidateCardBin_ServiceThrowsException() {
         // Given
         when(cardBinValidationService.validateCardBin(anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class)))
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class), any(DeviceInfo.class)))
                 .thenThrow(new RuntimeException("Service error"));
 
         // When
@@ -298,8 +312,7 @@ class CardBinValidationControllerTest {
     @Test
     void testGetActiveBins_ServiceReturnsError() {
         // Given
-        GenericResponse<List<CardBinMaster>> serviceResponse = GenericResponse.error(
-                AppConstant.GEN_ERROR_CODE, AppConstant.GEN_ERROR_DESC);
+        GenericResponse<List<CardBinMaster>> serviceResponse = GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC);
         when(cardBinValidationService.getActiveBins()).thenReturn(serviceResponse);
 
         CardBinAllWrapper wrapper = CardBinAllWrapper.builder()
@@ -320,8 +333,8 @@ class CardBinValidationControllerTest {
 
         // Then
         assertNotNull(response);
-        assertEquals(AppConstant.GEN_ERROR_CODE, response.getStatus().getCode());
-        assertEquals(AppConstant.GEN_ERROR_DESC, response.getStatus().getDescription());
+        assertEquals(AppConstant.VALIDATION_FAILURE_CODE, response.getStatus().getCode());
+        assertEquals(AppConstant.VALIDATION_FAILURE_DESC, response.getStatus().getDescription());
 
         verify(cardBinValidationService, times(1)).getActiveBins();
     }
@@ -349,8 +362,8 @@ class CardBinValidationControllerTest {
 
         // Then
         assertNotNull(response);
-        assertEquals(AppConstant.GEN_ERROR_CODE, response.getStatus().getCode());
-        assertEquals(AppConstant.GEN_ERROR_DESC, response.getStatus().getDescription());
+        assertEquals(AppConstant.VALIDATION_FAILURE_CODE, response.getStatus().getCode());
+        assertEquals(AppConstant.VALIDATION_FAILURE_DESC, response.getStatus().getDescription());
 
         verify(cardBinValidationService, times(1)).getActiveBins();
     }
