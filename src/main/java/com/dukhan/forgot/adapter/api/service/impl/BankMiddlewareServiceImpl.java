@@ -16,7 +16,7 @@ public class BankMiddlewareServiceImpl implements BankMiddlewareService {
     
     private static final Logger logger = LoggerFactory.getLogger(BankMiddlewareServiceImpl.class);
     
-    @Value("${bank.middleware.url:http://localhost:8080}")
+    @Value("${bank.middleware.url}")
     private String bankMiddlewareUrl;
 
     @Autowired

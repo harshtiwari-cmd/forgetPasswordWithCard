@@ -20,7 +20,7 @@ public class OtpServiceImpl implements OtpService {
     @Autowired
     private RestTemplate restTemplate;
     
-    @Value("${otp.service.url:http://34.1.33.119:9097/rb-user-management/api/v1/otp/generate}")
+    @Value("${otp.service.url}")
     private String otpServiceUrl;
     
     @Override
