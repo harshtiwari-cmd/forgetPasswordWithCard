@@ -23,7 +23,7 @@ public class AppConstant {
     public static final String RESULT_CODE = "000000";
     public static final String RESULT_DESC = "SUCCESS";
     public static final String ERROR_CODE= "G-00001";
-    public static final String SUCCESS = "Successfully processed";
+    public static final String SUCCESS = "SUCCESS";
     public static final String NODATA = "NO DATA CONTENT";
     public static final String FAILURECODE = "000001";
     public static final String GEN_ERROR_CODE = "000500";
@@ -136,6 +136,9 @@ public class AppConstant {
 
     public static final String CARD_LENGTH_ERROR_DESC = "Card number must be at least 16 digits";
     public static final String CARD_PIN_LENGTH_ERROR_DESC = "Card pin must be at least 4 digits";
+
+    public static final String CARD_NOT_EXIST_MSG = "Card does not exist"; // MSG009
+    public static final String CARD_NOT_ALLOWED_MSG = "Card is not allowed"; // MSG010.1
 
 
 

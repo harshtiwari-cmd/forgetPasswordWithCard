@@ -5,9 +5,10 @@ import com.dukhan.forgot.domain.repository.CardBinMasterRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
+
 
 @Component
 public class CardBasicValidations {
@@ -15,6 +16,9 @@ public class CardBasicValidations {
 
     @Autowired
     private CardBinMasterRepository cardBinMasterRepository;
+
+    @Value("${card.bin.lengths}")
+    private Integer binLength;
 
     public CardBinMaster findMatchingBin(String cardNumber) {
         logger.debug("Extracting BIN from card number of length: {}", cardNumber != null ? cardNumber.length() : 0);
@@ -24,15 +28,17 @@ public class CardBasicValidations {
             return null;
         }
 
-        int[] binLengths = {8, 7, 6};
-        for (int len : binLengths) {
-            if (cardNumber.length() >= len) {
-                String binCandidate = cardNumber.substring(0, len);
-                List<CardBinMaster> binMasterList = cardBinMasterRepository.findByBin(binCandidate);
-                logger.debug("Searched for BIN: {}, found {} records", binCandidate, binMasterList.size());
-                if (!binMasterList.isEmpty()) {
-                    return binMasterList.get(0);
-                }
+        if (binLength == null || binLength <= 0 || binLength > 19) {
+            logger.warn("Configured card.bin.lengths is invalid: {}", binLength);
+            return null;
+        }
+
+        if (cardNumber.length() >= binLength) {
+            String binCandidate = cardNumber.substring(0, binLength);
+            List<CardBinMaster> binMasterList = cardBinMasterRepository.findByBin(binCandidate);
+            logger.debug("Searched for BIN: {}, found {} records", binCandidate, binMasterList.size());
+            if (!binMasterList.isEmpty()) {
+                return binMasterList.get(0);
             }
         }
 
