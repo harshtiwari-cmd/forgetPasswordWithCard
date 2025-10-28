@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class SimpleValidationResponse {
 
-    private String rimNo;
+    private String customerId;
     private String userName;
     private boolean otpStatus;
     private String jwtToken;

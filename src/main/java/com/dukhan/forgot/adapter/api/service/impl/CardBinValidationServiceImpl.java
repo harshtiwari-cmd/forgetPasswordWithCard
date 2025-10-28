@@ -245,7 +245,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
 
     private SimpleValidationResponse createSuccessResponseWithUsername(String customerNumber, String username,String jwtToken) {
         return SimpleValidationResponse.builder()
-                .rimNo(customerNumber)
+                .customerId(customerNumber)
                 .userName(username)
                 .otpStatus(true)
                 .jwtToken(jwtToken)
@@ -362,7 +362,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
             OtpGenerateRequest otpRequest = OtpGenerateRequest.builder()
                     .requestInfo(OtpGenerateRequest.RequestInfo.builder()
                             .action(AppConstant.OTP_FORGET)
-                            .rimNo(customerNumber)
+                            .customerId(customerNumber)
                             .build())
                     .deviceInfo(DeviceInfo.builder()
                             .deviceId(deviceInfo.getDeviceId())

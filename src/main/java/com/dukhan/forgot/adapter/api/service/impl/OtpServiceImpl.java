@@ -29,7 +29,7 @@ public class OtpServiceImpl implements OtpService {
                                           OtpGenerateRequest request) {
         try {
             logger.debug("Calling OTP generation API for customerId: {}",
-                    request.getRequestInfo().getRimNo());
+                    request.getRequestInfo().getCustomerId());
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("unit", unit != null ? unit : "DEFAULT");
@@ -51,7 +51,7 @@ public class OtpServiceImpl implements OtpService {
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 OtpGenerateResponse otpResponse = response.getBody();
                 logger.info("OTP generation successful for customerId: {}, status: {}",
-                        request.getRequestInfo().getRimNo(),
+                        request.getRequestInfo().getCustomerId(),
                         otpResponse.getStatus() != null ? otpResponse.getStatus().getDescription() : "UNKNOWN");
                 return otpResponse;
             } else {
