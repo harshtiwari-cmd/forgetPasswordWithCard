@@ -1,147 +1,397 @@
 package com.dukhan.forgot.adapter.api.controller;
 
 import com.dukhan.forgot.adapter.api.service.CardBinValidationService;
-import com.dukhan.forgot.domain.model.dto.CardBinValidationRequest;
-import com.dukhan.forgot.domain.model.dto.CardBinValidationResponse;
-import com.dukhan.forgot.domain.model.dto.CardBinValidationWrapper;
+import com.dukhan.forgot.domain.model.dto.*;
 import com.dukhan.forgot.domain.model.entity.CardBinMaster;
 import com.dukhan.forgot.infrastructure.common.AppConstant;
 import com.dukhan.forgot.infrastructure.common.GenericResponse;
-import com.dukhan.forgot.infrastructure.common.ResultUtilVO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 class CardBinValidationControllerTest {
 
-    private CardBinValidationService service;
+    @Mock
+    private CardBinValidationService cardBinValidationService;
+
+    @InjectMocks
     private CardBinValidationController controller;
+
+    private CardBinValidationWrapper wrapper;
+    private CardBinValidationRequest request;
+    private SimpleValidationResponse validationResponse;
+    private DeviceInfo deviceInfo;
 
     @BeforeEach
     void setUp() {
-        service = mock(CardBinValidationService.class);
-        controller = new CardBinValidationController(service);
+
+        deviceInfo = DeviceInfo.builder()
+                .deviceId("DEVICE123")
+                .ipAddress("192.168.1.1")
+                .vendorId("VENDOR123")
+                .osVersion("1.0.0")
+                .osType("Android")
+                .appVersion("2.1.0")
+                .endToEndId("E2E123")
+                .build();
+
+        request = CardBinValidationRequest.builder()
+                .cardNumber("1234567890123456")
+                .pin("1234")
+                .build();
+
+        wrapper = CardBinValidationWrapper.builder()
+                .requestInfo(request)
+                .deviceInfo(deviceInfo)
+                .build();
+
+        validationResponse = SimpleValidationResponse.builder()
+                .customerId("123456")
+                .userName("testuser")
+                .otpStatus(true)
+                .build();
     }
 
     @Test
     void testValidateCardBin_Success() {
-        // given
-        CardBinValidationRequest request = new CardBinValidationRequest("1234567890123456", "1234");
-        CardBinValidationWrapper wrapper = new CardBinValidationWrapper();
-        wrapper.setRequestInfo(request);
+        // Given
+        GenericResponse<SimpleValidationResponse> serviceResponse = GenericResponse.success(validationResponse);
 
-        CardBinValidationResponse responseData = new CardBinValidationResponse(
-                true, "Success", "123456", "CREDIT", "VISA", "CODE1",
-                "ENCRYPTED_PIN", "<xml/>", "<xml/>", null
-        );
+        when(cardBinValidationService.validateCardBin(anyString(), anyString(), anyString(), 
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class), any(DeviceInfo.class)))
+                .thenReturn(serviceResponse);
 
-        GenericResponse<CardBinValidationResponse> serviceResponse =
-                new GenericResponse<>(responseData, new ResultUtilVO(AppConstant.RESULT_CODE, "SUCCESS"));
+        // When
+        ResponseEntity<GenericResponse<SimpleValidationResponse>> response = controller.validateCardBin(
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", wrapper);
 
-        when(service.validateCardBin(
-                anyString(), anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString(), any(CardBinValidationRequest.class))
-        ).thenReturn(serviceResponse);
-
-        // when
-        GenericResponse<CardBinValidationResponse> response = controller.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", wrapper
-        );
-
-        // then
+        // Then
         assertNotNull(response);
-        assertNotNull(response.getStatus());
-        assertEquals(AppConstant.RESULT_CODE, response.getStatus().getCode());
-        assertNotNull(response.getData());
-        assertEquals("123456", response.getData().getBin());
-        assertEquals("ENCRYPTED_PIN", response.getData().getEncryptedPin());
-        verify(service, times(1)).validateCardBin(anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class));
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(AppConstant.RESULT_CODE, response.getBody().getStatus().getCode());
+        assertNotNull(response.getBody().getData());
+        assertEquals("123456", response.getBody().getData().getCustomerId());
+        assertEquals("testuser", response.getBody().getData().getUserName());
+        assertTrue(response.getBody().getData().isOtpStatus());
+
+        verify(cardBinValidationService, times(1)).validateCardBin(anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class), any(DeviceInfo.class));
     }
 
     @Test
-    void testValidateCardBin_Error() {
-        // given
-        CardBinValidationRequest request = new CardBinValidationRequest("1234567890123456", "1234");
-        CardBinValidationWrapper wrapper = new CardBinValidationWrapper();
-        wrapper.setRequestInfo(request);
+    void testValidateCardBin_ServiceReturnsError() {
+        // Given
+        GenericResponse<SimpleValidationResponse> serviceResponse = GenericResponse.error(
+                AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC);
+        when(cardBinValidationService.validateCardBin(anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class), any(DeviceInfo.class)))
+                .thenReturn(serviceResponse);
 
-        GenericResponse<CardBinValidationResponse> serviceResponse =
-                GenericResponse.error("G-0001", "Card not valid");
+        // When
+        ResponseEntity<GenericResponse<SimpleValidationResponse>> response = controller.validateCardBin(
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", wrapper);
 
-        when(service.validateCardBin(
-                anyString(), anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString(), any(CardBinValidationRequest.class))
-        ).thenReturn(serviceResponse);
-
-        // when
-        GenericResponse<CardBinValidationResponse> response = controller.validateCardBin(
-                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", wrapper
-        );
-
-        // then
+        // Then
         assertNotNull(response);
-        assertNotNull(response.getStatus());
-        assertEquals("G-0001", response.getStatus().getCode());
-        assertNull(response.getData());
-        verify(service, times(1)).validateCardBin(anyString(), anyString(), anyString(),
-                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class));
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(AppConstant.VALIDATION_FAILURE_CODE, response.getBody().getStatus().getCode());
+        assertEquals(AppConstant.VALIDATION_FAILURE_DESC, response.getBody().getStatus().getDescription());
+
+        verify(cardBinValidationService, times(1)).validateCardBin(anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class), any(DeviceInfo.class));
+    }
+
+    @Test
+    void testValidateCardBin_ServiceReturnsNull() {
+        // Given
+        when(cardBinValidationService.validateCardBin(anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class),  any(DeviceInfo.class)))
+                .thenReturn(null);
+
+        // When
+        ResponseEntity<GenericResponse<SimpleValidationResponse>> response = controller.validateCardBin(
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", wrapper);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(AppConstant.VALIDATION_FAILURE_CODE, response.getBody().getStatus().getCode());
+        assertEquals(AppConstant.VALIDATION_FAILURE_DESC, response.getBody().getStatus().getDescription());
+    }
+
+    @Test
+    void testValidateCardBin_ServiceReturnsNullStatus() {
+        // Given
+        GenericResponse<SimpleValidationResponse> serviceResponse = new GenericResponse<>();
+        serviceResponse.setStatus(null);
+        when(cardBinValidationService.validateCardBin(anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class),  any(DeviceInfo.class)))
+                .thenReturn(serviceResponse);
+
+        // When
+        ResponseEntity<GenericResponse<SimpleValidationResponse>> response = controller.validateCardBin(
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", wrapper);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(AppConstant.VALIDATION_FAILURE_CODE, response.getBody().getStatus().getCode());
+        assertEquals(AppConstant.VALIDATION_FAILURE_DESC, response.getBody().getStatus().getDescription());
+    }
+
+    @Test
+    void testValidateCardBin_ServiceReturnsInvalidData() {
+        // Given
+        SimpleValidationResponse invalidResponse = SimpleValidationResponse.builder()
+                .customerId(null)
+                .userName(null)
+                .otpStatus(false)
+                .build();
+        GenericResponse<SimpleValidationResponse> serviceResponse = GenericResponse.success(invalidResponse);
+        when(cardBinValidationService.validateCardBin(anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class), any(DeviceInfo.class)))
+                .thenReturn(serviceResponse);
+
+        // When
+        ResponseEntity<GenericResponse<SimpleValidationResponse>> response = controller.validateCardBin(
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", wrapper);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(AppConstant.VALIDATION_FAILURE_CODE, response.getBody().getStatus().getCode());
+        assertEquals(AppConstant.VALIDATION_FAILURE_DESC, response.getBody().getStatus().getDescription());
+    }
+
+    @Test
+    void testValidateCardBin_ServiceThrowsException() {
+        // Given
+        when(cardBinValidationService.validateCardBin(anyString(), anyString(), anyString(),
+                anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class), any(DeviceInfo.class)))
+                .thenThrow(new RuntimeException("Service error"));
+
+        // When
+        ResponseEntity<GenericResponse<SimpleValidationResponse>> response = controller.validateCardBin(
+                "BKR", "MOB", "en-US", "SERVICE", "SCREEN", "MODULE", "SUBMODULE", wrapper);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals(AppConstant.VALIDATION_FAILURE_CODE, response.getBody().getStatus().getCode());
+        assertEquals(AppConstant.VALIDATION_FAILURE_DESC, response.getBody().getStatus().getDescription());
     }
 
     @Test
     void testGetActiveBins_Success() {
-        // given
-        CardBinMaster bin1 = new CardBinMaster("CODE1", "123456", "CREDIT", "VISA", "ACTIVE");
-        CardBinMaster bin2 = new CardBinMaster("CODE2", "654321", "DEBIT", "MASTERCARD", "ACTIVE");
+        // Given
+        CardBinMaster bin1 = CardBinMaster.builder()
+                .code("CODE1")
+                .bin("123456")
+                .productType("CREDIT")
+                .cardType("VISA")
+                .status("ACTIVE")
+                .build();
+
+        CardBinMaster bin2 = CardBinMaster.builder()
+                .code("CODE2")
+                .bin("654321")
+                .productType("DEBIT")
+                .cardType("MASTERCARD")
+                .status("ACTIVE")
+                .build();
 
         List<CardBinMaster> activeBins = List.of(bin1, bin2);
         GenericResponse<List<CardBinMaster>> serviceResponse = GenericResponse.success(activeBins);
+        when(cardBinValidationService.getActiveBins()).thenReturn(serviceResponse);
 
-        when(service.getActiveBins()).thenReturn(serviceResponse);
+        CardBinAllWrapper wrapper = CardBinAllWrapper.builder()
+                .deviceInfo(DeviceInfo.builder()
+                        .deviceId("DEVICE123")
+                        .ipAddress("192.168.1.1")
+                        .vendorId("VENDOR123")
+                        .osVersion("1.0.0")
+                        .osType("Android")
+                        .appVersion("2.1.0")
+                        .endToEndId("E2E123")
+                        .build())
+                .build();
 
-        // when
-        GenericResponse<List<CardBinMaster>> response = controller.getActiveBins();
+        // When
+        GenericResponse<List<CardBinMaster>> response = controller.getActiveBins(
+                "SERVICE", "MODULE", "SUBMODULE", "SCREEN", "WEB", "en", wrapper);
 
-        // then
+        // Then
         assertNotNull(response);
         assertNotNull(response.getData());
         assertEquals(2, response.getData().size());
         assertEquals("123456", response.getData().get(0).getBin());
         assertEquals(AppConstant.RESULT_CODE, response.getStatus().getCode());
+
+        verify(cardBinValidationService, times(1)).getActiveBins();
     }
 
     @Test
     void testGetActiveBins_NoData() {
-        // given
-        GenericResponse<List<CardBinMaster>> serviceResponse = GenericResponse.successNoData(Collections.emptyList());
-        when(service.getActiveBins()).thenReturn(serviceResponse);
+        // Given
+        GenericResponse<List<CardBinMaster>> serviceResponse = GenericResponse.success(Collections.emptyList());
+        System.out.println(serviceResponse);
+        when(cardBinValidationService.getActiveBins()).thenReturn(serviceResponse);
 
-        // when
-        GenericResponse<List<CardBinMaster>> response = controller.getActiveBins();
+        CardBinAllWrapper wrapper = CardBinAllWrapper.builder()
+                .deviceInfo(DeviceInfo.builder()
+                        .deviceId("DEVICE123")
+                        .ipAddress("192.168.1.1")
+                        .vendorId("VENDOR123")
+                        .osVersion("1.0.0")
+                        .osType("Android")
+                        .appVersion("2.1.0")
+                        .endToEndId("E2E123")
+                        .build())
+                .build();
 
-        // then
+        // When
+        GenericResponse<List<CardBinMaster>> response = controller.getActiveBins(
+                "SERVICE", "MODULE", "SUBMODULE", "SCREEN", "WEB", "en", wrapper);
+
+        System.out.println(response);
+        // Then
         assertNotNull(response);
-        assertNotNull(response.getData());
-        assertTrue(response.getData().isEmpty());
         assertEquals(AppConstant.NO_DATA_CODE, response.getStatus().getCode());
+        assertEquals(AppConstant.NODATA, response.getStatus().getDescription());
+        verify(cardBinValidationService, times(1)).getActiveBins();
     }
 
     @Test
-    void testGetActiveBins_Exception() {
-        // given
-        when(service.getActiveBins()).thenThrow(new RuntimeException("Database failure"));
+    void testGetActiveBins_NullWrapper() {
+        // When
+        GenericResponse<List<CardBinMaster>> response = controller.getActiveBins(
+                "SERVICE", "MODULE", "SUBMODULE", "SCREEN", "WEB", "en", null);
 
-        // when
-        GenericResponse<List<CardBinMaster>> response = controller.getActiveBins();
-
-        // then
+        // Then
         assertNotNull(response);
         assertEquals(AppConstant.GEN_ERROR_CODE, response.getStatus().getCode());
-        assertEquals(AppConstant.GEN_ERROR_DESC, response.getStatus().getDescription());
+        assertEquals("Request body is required", response.getStatus().getDescription());
+    }
+
+    @Test
+    void testGetActiveBins_NullDeviceInfo() {
+        // Given
+        CardBinAllWrapper wrapper = CardBinAllWrapper.builder()
+                .deviceInfo(null)
+                .build();
+
+        // When
+        GenericResponse<List<CardBinMaster>> response = controller.getActiveBins(
+                "SERVICE", "MODULE", "SUBMODULE", "SCREEN", "WEB", "en", wrapper);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(AppConstant.GEN_ERROR_CODE, response.getStatus().getCode());
+        assertEquals("Device information is required", response.getStatus().getDescription());
+    }
+
+    @Test
+    void testGetActiveBins_ServiceReturnsError() {
+        // Given
+        GenericResponse<List<CardBinMaster>> serviceResponse = GenericResponse.error(AppConstant.VALIDATION_FAILURE_CODE, AppConstant.VALIDATION_FAILURE_DESC);
+        when(cardBinValidationService.getActiveBins()).thenReturn(serviceResponse);
+
+        CardBinAllWrapper wrapper = CardBinAllWrapper.builder()
+                .deviceInfo(DeviceInfo.builder()
+                        .deviceId("DEVICE123")
+                        .ipAddress("192.168.1.1")
+                        .vendorId("VENDOR123")
+                        .osVersion("1.0.0")
+                        .osType("Android")
+                        .appVersion("2.1.0")
+                        .endToEndId("E2E123")
+                        .build())
+                .build();
+
+        // When
+        GenericResponse<List<CardBinMaster>> response = controller.getActiveBins(
+                "SERVICE", "MODULE", "SUBMODULE", "SCREEN", "WEB", "en", wrapper);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(AppConstant.VALIDATION_FAILURE_CODE, response.getStatus().getCode());
+        assertEquals(AppConstant.VALIDATION_FAILURE_DESC, response.getStatus().getDescription());
+
+        verify(cardBinValidationService, times(1)).getActiveBins();
+    }
+
+    @Test
+    void testGetActiveBins_ServiceThrowsException() {
+        // Given
+        when(cardBinValidationService.getActiveBins()).thenThrow(new RuntimeException("Database error"));
+
+        CardBinAllWrapper wrapper = CardBinAllWrapper.builder()
+                .deviceInfo(DeviceInfo.builder()
+                        .deviceId("DEVICE123")
+                        .ipAddress("192.168.1.1")
+                        .vendorId("VENDOR123")
+                        .osVersion("1.0.0")
+                        .osType("Android")
+                        .appVersion("2.1.0")
+                        .endToEndId("E2E123")
+                        .build())
+                .build();
+
+        // When
+        GenericResponse<List<CardBinMaster>> response = controller.getActiveBins(
+                "SERVICE", "MODULE", "SUBMODULE", "SCREEN", "WEB", "en", wrapper);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(AppConstant.VALIDATION_FAILURE_CODE, response.getStatus().getCode());
+        assertEquals(AppConstant.VALIDATION_FAILURE_DESC, response.getStatus().getDescription());
+
+        verify(cardBinValidationService, times(1)).getActiveBins();
+    }
+
+    @Test
+    void testMaskCardNumber_NullCardNumber() {
+        // When
+        String result = controller.maskCardNumber(null);
+
+        // Then
+        assertEquals("****", result);
+    }
+
+    @Test
+    void testMaskCardNumber_ShortCardNumber() {
+        // When
+        String result = controller.maskCardNumber("123");
+
+        // Then
+        assertEquals("****", result);
+    }
+
+    @Test
+    void testMaskCardNumber_ValidCardNumber() {
+        // When
+        String result = controller.maskCardNumber("1234567890123456");
+
+        // Then
+        assertEquals("1234****3456", result);
     }
 }

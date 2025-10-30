@@ -1,6 +1,11 @@
-
 mock:
-  enabled: true
+  enabled: false
+otp:
+  service:
+    url: http://34.1.33.119:9097/rb-user-management/api/v1/otp/generate
+bank:
+  middleware:
+    url: http://localhost:8080
 
 spring:
   application:
@@ -38,3 +43,8 @@ app:
   security:
     userId: ${APP_SECURITY_USER_ID:your_user_id}
     password: ${APP_SECURITY_PASSWORD:your_password}
+
+
+card:
+  bin:
+    lengths: 6

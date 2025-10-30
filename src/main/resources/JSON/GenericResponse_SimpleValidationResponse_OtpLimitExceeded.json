@@ -1,0 +1,7 @@
+{
+  "data": null,
+  "status": {
+    "code": "OTP001",
+    "description": "USER_BLOCKED_OTP_LIMIT_EXCEEDED"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "data": {
+    "customerId": "1234567890123456",
+    "userName": "testuser@example.com",
+    "otpStatus": true,
+    "jwtToken": "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJyb2xlcyI6WyJhZG1pbiIsImVkaXRvciJdfQ"
+  },
+  "status": {
+    "code": "000000",
+    "description": "SUCCESS"
+  }
+}
