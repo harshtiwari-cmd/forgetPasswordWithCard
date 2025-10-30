@@ -124,6 +124,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
 
                     String username;
                     try {
+                        logger.info("FIRST");
                         username = getCustomerUsername(customerNumber);
                     } catch (UserBlockedException ex) {
                         logger.warn("User is blocked for customerNumber: {}", customerNumber);
@@ -132,6 +133,7 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                         logger.warn("User must retry after 24 hours for customerNumber: {}", customerNumber);
                         return GenericResponse.error(AppConstant.RETRY_DATA_CODE, AppConstant.RETRY_DATA_MSG);
                     }
+                    logger.info("SECOND");
                     if (username == null) {
                         logger.warn("Customer not found in database for customerNumber: {}", customerNumber);
                         return GenericResponse.error(AppConstant.USER_NOT_FOUND_CODE, AppConstant.USER_NOT_FOUND_MSG);
@@ -142,10 +144,12 @@ public class CardBinValidationServiceImpl implements CardBinValidationService {
                         return GenericResponse.error(AppConstant.OTP_LIMIT, AppConstant.OTP_LIMIT_MSG);
                     }
 
+                    logger.info("THIRD");
                     OtpGenerateResponse otpResponse = callOtpGenerationAPI(unit, channel, lang, serviceId, screenId, moduleId, subModuleId, customerNumber, deviceInfo);
                     if (otpResponse != null && otpResponse.getStatus() != null &&
                             AppConstant.RESULT_CODE.equals(otpResponse.getStatus().getCode()) &&
                             AppConstant.SUCCESS.equals(otpResponse.getStatus().getDescription())) {
+                        logger.info("FOURTH");
                         String jwtToken=otpResponse.getData().getJwtToken();
                         logger.info("OTP generation successful for customer: {}", customerNumber);
                         resetFailedAttempts(cardNumber);

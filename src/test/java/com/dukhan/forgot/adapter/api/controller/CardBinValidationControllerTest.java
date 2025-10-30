@@ -59,9 +59,9 @@ class CardBinValidationControllerTest {
                 .build();
 
         validationResponse = SimpleValidationResponse.builder()
-                .rimNumber("123456")
+                .customerId("123456")
                 .userName("testuser")
-                .otp(true)
+                .otpStatus(true)
                 .build();
     }
 
@@ -84,9 +84,9 @@ class CardBinValidationControllerTest {
         assertNotNull(response.getBody());
         assertEquals(AppConstant.RESULT_CODE, response.getBody().getStatus().getCode());
         assertNotNull(response.getBody().getData());
-        assertEquals("123456", response.getBody().getData().getRimNumber());
+        assertEquals("123456", response.getBody().getData().getCustomerId());
         assertEquals("testuser", response.getBody().getData().getUserName());
-        assertTrue(response.getBody().getData().isOtp());
+        assertTrue(response.getBody().getData().isOtpStatus());
 
         verify(cardBinValidationService, times(1)).validateCardBin(anyString(), anyString(), anyString(),
                 anyString(), anyString(), anyString(), anyString(), any(CardBinValidationRequest.class), any(DeviceInfo.class));
@@ -160,9 +160,9 @@ class CardBinValidationControllerTest {
     void testValidateCardBin_ServiceReturnsInvalidData() {
         // Given
         SimpleValidationResponse invalidResponse = SimpleValidationResponse.builder()
-                .rimNumber(null)
+                .customerId(null)
                 .userName(null)
-                .otp(false)
+                .otpStatus(false)
                 .build();
         GenericResponse<SimpleValidationResponse> serviceResponse = GenericResponse.success(invalidResponse);
         when(cardBinValidationService.validateCardBin(anyString(), anyString(), anyString(),

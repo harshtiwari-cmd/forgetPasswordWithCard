@@ -135,7 +135,10 @@ class OtpGenerateResponseTest {
     @Test
     void testOtpDataAllArgsConstructor() {
         // When
-        OtpGenerateResponse.OtpData data = new OtpGenerateResponse.OtpData("*******3335", "OTP generated successfully and sent to registered mobile number");
+        OtpGenerateResponse.OtpData data = OtpGenerateResponse.OtpData.builder()
+                .mobileNumber("*******3335")
+                .message("OTP generated successfully and sent to registered mobile number")
+                .build();
 
         // Then
         assertNotNull(data);

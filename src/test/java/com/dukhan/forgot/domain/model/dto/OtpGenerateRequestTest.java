@@ -25,7 +25,7 @@ class OtpGenerateRequestTest {
     void testBuilder() {
         OtpGenerateRequest.RequestInfo requestInfo = OtpGenerateRequest.RequestInfo.builder()
                 .action("login")
-                .rimNo("+97433333335")
+                .customerId("+97433333335")
                 .build();
 
         DeviceInfo deviceInfo = DeviceInfo.builder()
@@ -47,7 +47,7 @@ class OtpGenerateRequestTest {
         assertNotNull(request.getRequestInfo());
         assertNotNull(request.getDeviceInfo());
         assertEquals("login", request.getRequestInfo().getAction());
-        assertEquals("+97433333335", request.getRequestInfo().getRimNo());
+        assertEquals("+97433333335", request.getRequestInfo().getCustomerId());
         assertEquals("DEVICE123", request.getDeviceInfo().getDeviceId());
         assertEquals("192.168.1.1", request.getDeviceInfo().getIpAddress());
     }
@@ -65,7 +65,7 @@ class OtpGenerateRequestTest {
     void testAllArgsConstructor() {
         OtpGenerateRequest.RequestInfo requestInfo = OtpGenerateRequest.RequestInfo.builder()
                 .action("login")
-                .rimNo("+97433333335")
+                .customerId("+97433333335")
                 .build();
 
         DeviceInfo deviceInfo = DeviceInfo.builder()
@@ -84,7 +84,7 @@ class OtpGenerateRequestTest {
         assertNotNull(request.getRequestInfo());
         assertNotNull(request.getDeviceInfo());
         assertEquals("login", request.getRequestInfo().getAction());
-        assertEquals("+97433333335", request.getRequestInfo().getRimNo());
+        assertEquals("+97433333335", request.getRequestInfo().getCustomerId());
         assertEquals("DEVICE123", request.getDeviceInfo().getDeviceId());
     }
 
@@ -92,12 +92,12 @@ class OtpGenerateRequestTest {
     void testRequestInfoBuilder() {
         OtpGenerateRequest.RequestInfo requestInfo = OtpGenerateRequest.RequestInfo.builder()
                 .action("login")
-                .rimNo("+97433333335")
+                .customerId("+97433333335")
                 .build();
 
         assertNotNull(requestInfo);
         assertEquals("login", requestInfo.getAction());
-        assertEquals("+97433333335", requestInfo.getRimNo());
+        assertEquals("+97433333335", requestInfo.getCustomerId());
     }
 
     @Test
@@ -106,7 +106,7 @@ class OtpGenerateRequestTest {
 
         assertNotNull(requestInfo);
         assertNull(requestInfo.getAction());
-        assertNull(requestInfo.getRimNo());
+        assertNull(requestInfo.getCustomerId());
     }
 
     @Test
@@ -115,14 +115,14 @@ class OtpGenerateRequestTest {
 
         assertNotNull(requestInfo);
         assertEquals("login", requestInfo.getAction());
-        assertEquals("+97433333335", requestInfo.getRimNo());
+        assertEquals("+97433333335", requestInfo.getCustomerId());
     }
 
     @Test
     void testValidation_ValidRequest() {
         OtpGenerateRequest.RequestInfo requestInfo = OtpGenerateRequest.RequestInfo.builder()
                 .action("login")
-                .rimNo("+97433333335")
+                .customerId("+97433333335")
                 .build();
 
         DeviceInfo deviceInfo = DeviceInfo.builder()
@@ -172,7 +172,7 @@ class OtpGenerateRequestTest {
     void testValidation_NullDeviceInfo() {
         OtpGenerateRequest.RequestInfo requestInfo = OtpGenerateRequest.RequestInfo.builder()
                 .action("login")
-                .rimNo("+97433333335")
+                .customerId("+97433333335")
                 .build();
 
         OtpGenerateRequest request = OtpGenerateRequest.builder()
@@ -190,7 +190,7 @@ class OtpGenerateRequestTest {
     void testValidation_RequestInfoWithBlankAction() {
         OtpGenerateRequest.RequestInfo requestInfo = OtpGenerateRequest.RequestInfo.builder()
                 .action("")
-                .rimNo("+97433333335")
+                .customerId("+97433333335")
                 .build();
 
         DeviceInfo deviceInfo = DeviceInfo.builder()
@@ -218,7 +218,7 @@ class OtpGenerateRequestTest {
     void testValidation_RequestInfoWithBlankMobileNumber() {
         OtpGenerateRequest.RequestInfo requestInfo = OtpGenerateRequest.RequestInfo.builder()
                 .action("login")
-                .rimNo("")
+                .customerId("")
                 .build();
 
         DeviceInfo deviceInfo = DeviceInfo.builder()
@@ -240,7 +240,7 @@ class OtpGenerateRequestTest {
 
         System.out.println(violations);
         assertFalse(violations.isEmpty());
-        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("RimNumber number is required")));
+        assertTrue(violations.stream().anyMatch(v -> v.getMessage().contains("Customer number is required")));
     }
 
     @Test
@@ -260,7 +260,7 @@ class OtpGenerateRequestTest {
     void testToString() {
         OtpGenerateRequest.RequestInfo requestInfo = OtpGenerateRequest.RequestInfo.builder()
                 .action("login")
-                .rimNo("+97433333335")
+                .customerId("+97433333335")
                 .build();
 
         DeviceInfo deviceInfo = DeviceInfo.builder()
@@ -291,7 +291,7 @@ class OtpGenerateRequestTest {
         // Given
         OtpGenerateRequest.RequestInfo requestInfo1 = OtpGenerateRequest.RequestInfo.builder()
                 .action("login")
-                .rimNo("+97433333335")
+                .customerId("+97433333335")
                 .build();
 
         DeviceInfo deviceInfo1 = DeviceInfo.builder()

@@ -4,6 +4,7 @@ import com.dukhan.forgot.domain.model.dto.CardBinValidationRequest;
 import com.dukhan.forgot.domain.model.dto.DeviceInfo;
 import com.dukhan.forgot.domain.model.dto.SimpleValidationResponse;
 import com.dukhan.forgot.domain.model.entity.CardBinMaster;
+import com.dukhan.forgot.infrastructure.common.AppConstant;
 import com.dukhan.forgot.infrastructure.common.GenericResponse;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,6 +38,8 @@ class MockCardBinValidationServiceImplTest {
 
     private DeviceInfo deviceInfo;
 
+    private SimpleValidationResponse validationResponse;
+
     @BeforeEach
     void setUp() {
         validRequest = CardBinValidationRequest.builder()
@@ -54,6 +57,12 @@ class MockCardBinValidationServiceImplTest {
                 .endToEndId("E2E123")
                 .build();
 
+        validationResponse = SimpleValidationResponse.builder()
+                .customerId("12345")
+                .userName("John Doe")
+                .otpStatus(true)
+                .build();
+
     }
 
     @Test
@@ -62,7 +71,8 @@ class MockCardBinValidationServiceImplTest {
         validRequest.setCardNumber(null);
         // Arrange
         GenericResponse<SimpleValidationResponse> mockResponse = GenericResponse.success(
-                new SimpleValidationResponse("12345", "John Doe", true)
+                validationResponse
+
         );
 
         // Mock objectMapper to return the above response
@@ -75,11 +85,11 @@ class MockCardBinValidationServiceImplTest {
         // Assert
         assertNotNull(response);
         assertNotNull(response.getData());
-        assertEquals("12345", response.getData().getRimNumber());
-        assertTrue(response.getData().isOtp());
+        assertEquals("12345", response.getData().getCustomerId());
+        assertTrue(response.getData().isOtpStatus());
         assertEquals("John Doe", response.getData().getUserName());
         assertEquals("000000", response.getStatus().getCode());
-        assertEquals("Successfully processed", response.getStatus().getDescription());
+        assertEquals(AppConstant.SUCCESS, response.getStatus().getDescription());
 
         verify(objectMapper, times(1)).readValue(any(InputStream.class), any(TypeReference.class));
     }
@@ -89,7 +99,7 @@ class MockCardBinValidationServiceImplTest {
 
         // Arrange
         GenericResponse<SimpleValidationResponse> mockResponse = GenericResponse.success(
-                new SimpleValidationResponse("12345", "John Doe", true)
+                validationResponse
         );
 
         // Mock objectMapper to return the above response
@@ -102,10 +112,10 @@ class MockCardBinValidationServiceImplTest {
         // Assert
         assertNotNull(response);
         assertNotNull(response.getData());
-        assertEquals("12345", response.getData().getRimNumber());
-        assertTrue(response.getData().isOtp());
+        assertEquals("12345", response.getData().getCustomerId());
+        assertTrue(response.getData().isOtpStatus());
         assertEquals("John Doe", response.getData().getUserName());
-        assertEquals("Successfully processed", response.getStatus().getDescription());
+        assertEquals(AppConstant.SUCCESS, response.getStatus().getDescription());
 
         verify(objectMapper, times(1)).readValue(any(InputStream.class), any(TypeReference.class));
     }
@@ -251,7 +261,11 @@ class MockCardBinValidationServiceImplTest {
                 .build();
 
         GenericResponse<SimpleValidationResponse> mockResponse = GenericResponse.success(
-                new SimpleValidationResponse("00000", "Default User", false)
+                SimpleValidationResponse.builder()
+                        .customerId("00000")
+                        .userName("Default User")
+                        .otpStatus(false)
+                        .build()
         );
         when(objectMapper.readValue(any(InputStream.class), any(TypeReference.class))).thenReturn(mockResponse);
 
@@ -261,7 +275,7 @@ class MockCardBinValidationServiceImplTest {
         );
 
         // Assert
-        assertEquals("00000", response.getData().getRimNumber());
+        assertEquals("00000", response.getData().getCustomerId());
         assertEquals("Default User", response.getData().getUserName());
     }
 
@@ -280,7 +294,7 @@ class MockCardBinValidationServiceImplTest {
         assertNotNull(response);
         assertNotNull(response.getData());
         assertEquals(2, response.getData().size());
-        assertEquals("Successfully processed", response.getStatus().getDescription());
+        assertEquals(AppConstant.SUCCESS, response.getStatus().getDescription());
 
         verify(objectMapper, times(1)).readValue(any(InputStream.class), any(TypeReference.class));
     }

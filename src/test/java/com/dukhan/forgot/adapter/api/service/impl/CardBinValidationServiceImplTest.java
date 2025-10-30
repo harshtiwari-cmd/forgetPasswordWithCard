@@ -172,9 +172,9 @@ class CardBinValidationServiceImplTest {
         assertNotNull(response);
         assertEquals(AppConstant.RESULT_CODE, response.getStatus().getCode());
         assertNotNull(response.getData());
-        assertEquals("123456", response.getData().getRimNumber());
+        assertEquals("123456", response.getData().getCustomerId());
         assertEquals("testuser", response.getData().getUserName());
-        assertTrue(response.getData().isOtp());
+        assertTrue(response.getData().isOtpStatus());
 
         verify(cardBasicValidations, times(1)).findMatchingBin("1234567890123456");
         verify(hsmEncryptor, times(1)).generatePinBlockUnderZPK("1234", "1234567890123456", "CardBinValidation");
@@ -511,7 +511,13 @@ class CardBinValidationServiceImplTest {
                         .code(AppConstant.RESULT_CODE)
                         .description(AppConstant.SUCCESS)
                         .build())
+                .data(OtpGenerateResponse.OtpData.builder()
+                        .mobileNumber("+911234567890")
+                        .message("Your OTP is 123456")
+                        .jwtToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummyPayload.signature")
+                        .build())
                 .build();
+
 
         when(otpService.generateOtp(any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(otpGenerateResponse);
@@ -677,6 +683,11 @@ class CardBinValidationServiceImplTest {
                         .code(AppConstant.RESULT_CODE)
                         .description(AppConstant.SUCCESS)
                         .build())
+                .data(OtpGenerateResponse.OtpData.builder()
+                        .mobileNumber("+911234567890")
+                        .message("Your OTP is 123456")
+                        .jwtToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummyPayload.signature")
+                        .build())
                 .build();
 
         when(otpService.generateOtp(any(), any(), any(), any(), any(), any(), any(), any()))
@@ -726,7 +737,13 @@ class CardBinValidationServiceImplTest {
                         .code(AppConstant.RESULT_CODE)
                         .description(AppConstant.SUCCESS)
                         .build())
+                .data(OtpGenerateResponse.OtpData.builder()
+                        .mobileNumber("+911234567890")
+                        .message("Your OTP is 123456")
+                        .jwtToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummyPayload.signature")
+                        .build())
                 .build();
+
 
         when(otpService.generateOtp(any(), any(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(otpGenerateResponse);
